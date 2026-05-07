@@ -73,7 +73,10 @@ export default function Home() {
             Texte sind keine Vorhersagen, sondern Einladungen zur Selbsterkenntnis.
           </p>
           <p className="text-xs text-text-muted mt-4">
-            3 kostenlose Readings pro Tag. Powered by KI.
+            3 kostenlose Readings pro Tag. Powered by KI.{" "}
+            <Link href="/readings" className="underline hover:text-gold transition-colors">
+              Meine Readings
+            </Link>
           </p>
         </div>
       </section>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import StepIndicator from "@/components/StepIndicator";
 import TarotCard from "@/components/TarotCard";
@@ -8,6 +8,7 @@ import FeedbackForm from "@/components/FeedbackForm";
 import Panel from "@/components/Panel";
 import Button from "@/components/Button";
 import type { ReadingResponse } from "@/lib/ai";
+import { getOrCreateSessionToken } from "@/lib/session";
 
 type Step = "question" | "birth" | "drawing" | "generating" | "result";
 
@@ -34,6 +35,11 @@ type ReadingState = {
   revealed: boolean[];
   result: ReadingResponse | null;
   error: string | null;
+  sessionToken: string;
+  readingsRemaining: number | null;
+  followupQuestion: string;
+  followupResult: string | null;
+  followupLoading: boolean;
 };
 
 const INITIAL_STATE: ReadingState = {
@@ -50,6 +56,11 @@ const INITIAL_STATE: ReadingState = {
   revealed: [false, false, false],
   result: null,
   error: null,
+  sessionToken: "",
+  readingsRemaining: null,
+  followupQuestion: "",
+  followupResult: null,
+  followupLoading: false,
 };
 
 const CATEGORIES = [
@@ -62,6 +73,11 @@ const CATEGORIES = [
 
 export default function ReadingPage() {
   const [state, setState] = useState<ReadingState>(INITIAL_STATE);
+
+  useEffect(() => {
+    const token = getOrCreateSessionToken();
+    setState((s) => ({ ...s, sessionToken: token }));
+  }, []);
 
   const submitQuestion = () => {
     if (state.question.trim().length < 5) return;
@@ -84,6 +100,7 @@ export default function ReadingPage() {
           birthTime: state.birthTime || undefined,
           birthCity: state.birthCity || undefined,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          sessionToken: state.sessionToken || undefined,
         }),
       });
       if (!bpRes.ok) throw new Error(`Birth profile error: ${bpRes.status}`);
@@ -94,7 +111,7 @@ export default function ReadingPage() {
       const msg = err instanceof Error ? err.message : String(err);
       setState((s) => ({ ...s, error: msg }));
     }
-  }, [state.includeBirth, state.birthDate, state.birthTime, state.birthCity, state.question, state.questionCategory]);
+  }, [state.includeBirth, state.birthDate, state.birthTime, state.birthCity, state.question, state.questionCategory, state.sessionToken]);
 
   const createReading = async (question: string, category: string, birthProfileId: string | null) => {
     try {
@@ -105,10 +122,15 @@ export default function ReadingPage() {
           question,
           questionCategory: category,
           birthProfileId: birthProfileId ?? undefined,
+          sessionToken: state.sessionToken || undefined,
         }),
       });
       if (!res.ok) {
         const err = await res.json();
+        if (res.status === 429) {
+          setState((s) => ({ ...s, error: `Tageslimit erreicht. ${err.readingsRemaining ?? 0} Readings übrig.`, readingsRemaining: 0 }));
+          return;
+        }
         throw new Error(err.error || `Reading error: ${res.status}`);
       }
       const reading = await res.json();
@@ -156,6 +178,30 @@ export default function ReadingPage() {
       setState((s) => ({ ...s, error: msg, step: "result" }));
     }
   }, [state.readingId]);
+
+  const submitFollowup = useCallback(async () => {
+    if (!state.readingId || !state.followupQuestion.trim()) return;
+    setState((s) => ({ ...s, followupLoading: true }));
+    try {
+      const res = await fetch(`/api/readings/${state.readingId}/followup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: state.followupQuestion,
+          sessionToken: state.sessionToken,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || `Follow-up error: ${res.status}`);
+      }
+      const data = await res.json();
+      setState((s) => ({ ...s, followupResult: data.text, followupQuestion: "", followupLoading: false }));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setState((s) => ({ ...s, error: msg, followupLoading: false }));
+    }
+  }, [state.readingId, state.followupQuestion, state.sessionToken]);
 
   return (
     <div className="min-h-screen bg-surface px-4 py-8">
@@ -393,6 +439,46 @@ export default function ReadingPage() {
               </div>
             </Panel>
 
+            {/* Follow-up */}
+            {state.result && !state.followupResult && (
+              <Panel>
+                <h3 className="font-display text-sm tracking-wide text-gold mb-3">
+                  Nachfrage
+                </h3>
+                <p className="text-xs text-text-muted mb-3">
+                  Eine Nachfrage pro Reading ist kostenlos.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={state.followupQuestion}
+                    onChange={(e) => setState((s) => ({ ...s, followupQuestion: e.target.value }))}
+                    placeholder="Was möchtest du genauer wissen?"
+                    maxLength={300}
+                    className="flex-1 bg-surface-raised border border-border rounded-[var(--radius-input)] px-4 py-2.5 text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-gold/50"
+                  />
+                  <Button
+                    onClick={submitFollowup}
+                    disabled={state.followupQuestion.trim().length < 3 || state.followupLoading}
+                    variant="secondary"
+                  >
+                    {state.followupLoading ? "..." : "Fragen"}
+                  </Button>
+                </div>
+              </Panel>
+            )}
+
+            {state.followupResult && (
+              <Panel variant="ai">
+                <h3 className="font-display text-sm tracking-wide text-violet mb-3">
+                  Nachfrage — Antwort
+                </h3>
+                <div className="text-text-secondary text-sm leading-relaxed whitespace-pre-wrap">
+                  {state.followupResult}
+                </div>
+              </Panel>
+            )}
+
             {state.readingId && (
               <Panel>
                 <h3 className="font-display text-sm tracking-wide text-gold mb-4">
@@ -404,10 +490,17 @@ export default function ReadingPage() {
 
             <div className="flex flex-col items-center gap-3">
               <Link
-                href="/"
+                href="/reading"
                 className="text-sm text-gold hover:text-gold-soft transition-colors"
+                onClick={() => setState(INITIAL_STATE)}
               >
-                Zurück zur Startseite
+                Neues Reading starten
+              </Link>
+              <Link
+                href="/readings"
+                className="text-sm text-text-muted hover:text-gold transition-colors"
+              >
+                Meine Readings
               </Link>
               <p className="text-xs text-text-muted">
                 3 kostenlose Readings pro Tag

@@ -84,3 +84,29 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const sessionToken = searchParams.get("sessionToken");
+
+    const reading = await prisma.reading.findUnique({ where: { id } });
+    if (!reading) {
+      return NextResponse.json({ error: "Reading not found" }, { status: 404 });
+    }
+
+    if (sessionToken && reading.sessionToken !== sessionToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    await prisma.reading.delete({ where: { id } });
+    return NextResponse.json({ deleted: true });
+  } catch (error) {
+    console.error("Error deleting reading:", error);
+    return NextResponse.json({ error: "Failed to delete reading" }, { status: 500 });
+  }
+}

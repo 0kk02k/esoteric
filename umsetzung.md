@@ -483,11 +483,35 @@ Der Nutzer kann den kompletten MVP-Flow von Landingpage bis Reading-Feedback mob
 
 ---
 
-## Stufe 6: Auth, Speicherung und Nutzungslimits
+## Stufe 6: Auth, Speicherung und Nutzungslimits (ABGESCHLOSSEN)
 
 ### Ziel
 
 Readings, Nutzerstatus und Limits funktionieren kontrolliert, ohne den ersten Produktwert zu blockieren.
+
+### Ergebnis
+
+- **Session-System**: Anonyme UUID-basierte Sessions via localStorage
+- **Reading-Historie**: `/readings` Seite mit allen vergangenen Readings + Loeschfunktion
+- **Follow-up**: Eine Nachfrage pro Reading mit KI-generierter Antwort
+- **Rate Limiting**: IP-basiert, 30 Requests/Minute via Next.js Middleware
+- **Usage Limits**: 3 Readings/Tag (bestehend), 429-Response bei Ueberschreitung
+- **DELETE Endpoint**: Session-basierte ownership-Pruefung
+
+### Neue Dateien
+
+| Datei | Beschreibung |
+|-------|-------------|
+| `src/lib/session.ts` | Session-Token Utility |
+| `src/app/readings/page.tsx` | Reading-Historie |
+| `src/app/api/readings/[id]/followup/route.ts` | Follow-up API |
+| `src/middleware.ts` | IP-basiertes Rate Limiting |
+
+### Entscheidungen
+
+- **Hybrid-Modell**: Anonyme Session ohne Account-Pflicht. Account-Erstellung fuer spaeter (Phase 7+).
+- **Session-Speicher**: localStorage (client-side). Kein serverseitiges Session-Management fuer MVP.
+- **Rate Limiting**: In-Memory Store (resettet bei Serverneustart). Fuer Produktion auf Redis umstellen.
 
 ### Aufgaben
 
