@@ -882,6 +882,9 @@ Nach jeder abgeschlossenen Stufe muessen mindestens diese Bereiche geprueft werd
 | 2026-05-07 | 0+1 | Design-System grundlegend integriert | Design+Technik zusammen validieren, CSS-Variablen aus design.md |
 | 2026-05-07 | 2 | ORM: Prisma 7 mit SQLite (Dev) | Schnellstes Setup fuer lokalen MVP, PostgreSQL-Pfad bereit |
 | 2026-05-07 | 2 | 78 Tarotkarten mit Golden-Dawn-Zuordnungen geseedet | Vollstaendige Rider-Waite Stammdaten inkl. Elemente, Planeten, Tierkreis |
+| 2026-05-07 | 3 | Astrologie-Service v3.0: swisseph-wasm + Fallback | Produktionsnah mit Houses (Placidus), Transiten, Caching, Versionierung, Unsicherheitslogik |
+| 2026-05-07 | 3 | 49 Tests fuer Astrologie-Service (vitest) | Carl Jung, Einstein, Reproduzierbarkeit, Edge Cases, Caching |
+| 2026-05-07 | 3 | Client/Server-Split: Astrologie + KI ueber API Routes | swisseph-wasm (WASM) kann nicht ins Client-Bundle |
 
 ---
 
@@ -907,7 +910,7 @@ Nach jeder abgeschlossenen Stufe muessen mindestens diese Bereiche geprueft werd
 | 0 | Projektgrundlage und Entscheidungen | abgeschlossen |
 | 1 | Technischer Proof of Concept | abgeschlossen |
 | 2 | Datenmodell und Backend-Fundament | abgeschlossen |
-| 3 | Astrologie-Service produktionsnah machen | offen |
+| 3 | Astrologie-Service produktionsnah machen | abgeschlossen |
 | 4 | KI-, Prompt- und Safety-System | offen |
 | 5 | Frontend-MVP und Nutzerfluss | offen |
 | 6 | Auth, Speicherung und Nutzungslimits | offen |

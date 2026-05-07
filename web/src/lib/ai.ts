@@ -1,5 +1,3 @@
-"use server";
-
 import type { ChartResult } from "./astrology";
 
 export type TarotCard = {

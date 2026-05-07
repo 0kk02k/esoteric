@@ -2,9 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { calculateNatalChart } from "@/lib/astrology";
 import type { ChartResult } from "@/lib/astrology";
-import { generateReading } from "@/lib/ai";
 import type { ReadingResponse, TarotCard } from "@/lib/ai";
 import ReadingPanel from "@/components/ReadingPanel";
 import SymbolChip from "@/components/SymbolChip";
@@ -56,7 +54,23 @@ export default function TestPage() {
 
     try {
       const chartStart = performance.now();
-      const chart = await calculateNatalChart(TEST_BIRTH, TEST_LAT, TEST_LON);
+      const chartRes = await fetch("/api/astrology/chart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          year: TEST_BIRTH.getFullYear(),
+          month: TEST_BIRTH.getMonth() + 1,
+          day: TEST_BIRTH.getDate(),
+          hour: TEST_BIRTH.getHours(),
+          minute: TEST_BIRTH.getMinutes(),
+          latitude: TEST_LAT,
+          longitude: TEST_LON,
+          timezoneOffset: 1,
+          timeUnknown: false,
+        }),
+      });
+      if (!chartRes.ok) throw new Error(`Chart API error: ${chartRes.status}`);
+      const chart: ChartResult = await chartRes.json();
       const chartMs = Math.round(performance.now() - chartStart);
 
       setState((s) => ({ ...s, chart, chartMs, step: "context" }));
@@ -70,7 +84,13 @@ export default function TestPage() {
 
       setState((s) => ({ ...s, contextJson, step: "reading" }));
 
-      const reading = await generateReading(readingRequest);
+      const readingRes = await fetch("/api/test/reading", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(readingRequest),
+      });
+      if (!readingRes.ok) throw new Error(`Reading API error: ${readingRes.status}`);
+      const reading: ReadingResponse = await readingRes.json();
 
       setState((s) => ({ ...s, reading, step: "done" }));
     } catch (err) {
