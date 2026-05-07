@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# Next.js
+web/.next/
+web/out/
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Swiss Ephemeris binaries (large)
+astro/ephemeris/*.se1
+
+# Logs
+*.log
+npm-debug.log*
+
+# Claude
+.claude/
+
+# Coverage
+coverage/
+htmlcov/

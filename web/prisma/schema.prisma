@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String?  @unique
+  displayName    String?
+  authProvider   String?
+  authProviderId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  birthProfiles BirthProfile[]
+  readings      Reading[]
+  feedback      Feedback[]
+  usageLimits   UsageLimit[]
+  subscriptions Subscription[]
+  safetyEvents  SafetyEvent[]
+}
+
+model BirthProfile {
+  id           String   @id @default(cuid())
+  userId       String?
+  sessionToken String?
+  birthDate    DateTime
+  birthTime    String?
+  birthCity    String?
+  birthLat     Float?
+  birthLon     Float?
+  timezone     String?
+  timeUnknown  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user              User?              @relation(fields: [userId], references: [id])
+  chartCalculations ChartCalculation[]
+  readings          Reading[]
+}
+
+model ChartCalculation {
+  id                 String   @id @default(cuid())
+  birthProfileId     String
+  calculationVersion String   @default("1.0")
+  sunSign            String
+  moonSign           String
+  ascendantSign      String?
+  planetData         String
+  houseData          String?
+  aspectData         String?
+  calculatedAt       DateTime @default(now())
+
+  birthProfile BirthProfile @relation(fields: [birthProfileId], references: [id], onDelete: Cascade)
+}
+
+model TarotCard {
+  id               String  @id @default(cuid())
+  name             String  @unique
+  arcana           String
+  number           Int?
+  suit             String?
+  element          String?
+  planet           String?
+  zodiacSign       String?
+  goldenDawnKey    String?
+  keywordsUpright  String
+  keywordsReversed String
+  description      String?
+
+  draws TarotDraw[]
+}
+
+model TarotDraw {
+  id        String   @id @default(cuid())
+  readingId String
+  cardId    String
+  position  String
+  upright   Boolean  @default(true)
+  drawnAt   DateTime @default(now())
+
+  reading Reading   @relation(fields: [readingId], references: [id], onDelete: Cascade)
+  card    TarotCard @relation(fields: [cardId], references: [id])
+}
+
+model Reading {
+  id               String   @id @default(cuid())
+  userId           String?
+  sessionToken     String?
+  birthProfileId   String?
+  question         String
+  questionCategory String?
+  chartCalcId      String?
+  promptVersion    String   @default("1.0")
+  safetyVersion    String   @default("1.0")
+  readingText      String?
+  modelUsed        String?
+  tokensUsed       Int?
+  latencyMs        Int?
+  contextJson      String?
+  status           String   @default("pending")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user         User?         @relation(fields: [userId], references: [id])
+  birthProfile BirthProfile? @relation(fields: [birthProfileId], references: [id])
+  tarotDraws   TarotDraw[]
+  feedback     Feedback[]
+  safetyEvents SafetyEvent[]
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  readingId String
+  userId    String?
+  rating    String
+  tags      String?
+  comment   String?
+  createdAt DateTime @default(now())
+
+  reading Reading @relation(fields: [readingId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+}
+
+model UsageLimit {
+  id             String   @id @default(cuid())
+  userId         String?
+  sessionToken   String?
+  periodStart    DateTime
+  periodEnd      DateTime
+  readingsCount  Int      @default(0)
+  followupsCount Int      @default(0)
+  maxReadings    Int      @default(3)
+  maxFollowups   Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id])
+}
+
+model Subscription {
+  id            String    @id @default(cuid())
+  userId        String
+  plan          String
+  status        String
+  startDate     DateTime
+  endDate       DateTime?
+  stripePriceId String?
+  stripeSubId   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model SafetyEvent {
+  id           String   @id @default(cuid())
+  readingId    String?
+  userId       String?
+  sessionToken String?
+  eventType    String
+  category     String
+  severity     String
+  inputSnippet String?
+  actionTaken  String
+  metadata     String?
+  createdAt    DateTime @default(now())
+
+  reading Reading? @relation(fields: [readingId], references: [id])
+  user    User?    @relation(fields: [userId], references: [id])
+}
