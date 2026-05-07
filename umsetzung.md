@@ -397,11 +397,31 @@ Die KI erzeugt konsistente, nicht-direktive und sichere Deutungen auf Basis stru
 
 ---
 
-## Stufe 5: Frontend-MVP und Nutzerfluss
+## Stufe 5: Frontend-MVP und Nutzerfluss (ABGESCHLOSSEN)
 
 ### Ziel
 
 Der Nutzer kann den kompletten MVP-Flow von Landingpage bis Reading-Feedback mobil nutzen.
+
+### Ergebnis
+
+- **Landingpage**: Hero, "So funktioniert's", Disclaimer/CTA
+- **Reading-Flow** (`/reading`): 5-Schritte-Wizard (Frage → Geburtsdaten → Karten ziehen → Deutung → Feedback)
+- **Tarot-Karten**: Interaktives Aufdecken mit CSS-Flip-Animation
+- **Feedback**: Rating (Gut/Teilweise/Nicht hilfreich) + Tags + Kommentar
+- **API**: `/api/readings/[id]/generate` fuer serverseitige KI-Generierung mit optionaler Chart-Berechnung
+- Build: gruen, 86/86 Tests bestanden
+
+### Neue Dateien
+
+| Datei | Beschreibung |
+|-------|-------------|
+| `src/app/page.tsx` | Erweiterte Landingpage |
+| `src/app/reading/page.tsx` | Multi-Step Reading-Flow |
+| `src/components/TarotCard.tsx` | Karte mit Flip-Animation |
+| `src/components/StepIndicator.tsx` | Fortschrittsanzeige |
+| `src/components/FeedbackForm.tsx` | Feedback-Komponente |
+| `src/app/api/readings/[id]/generate/route.ts` | KI-Generierung + Chart |
 
 ### Aufgaben
 
