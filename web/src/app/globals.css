@@ -1,19 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --color-bg: #09080D;
-  --color-surface: #15121D;
-  --color-surface-raised: #211A2C;
-  --color-text: #F4EBDD;
-  --color-text-secondary: #B8AFA3;
-  --color-text-muted: #7E748A;
-  --color-gold: #C8A45D;
-  --color-gold-soft: #E0C98A;
-  --color-violet: #7C5CFF;
-  --color-violet-deep: #3A254F;
-  --color-border: #3A3148;
-  --color-danger-muted: #A66A6A;
-  --color-success-muted: #8BAE8B;
+  --color-bg: #050508;
+  --color-surface: #0a0a0f;
+  --color-surface-raised: #12121a;
+  --color-text: #f4ebdd;
+  --color-text-secondary: #b8afa3;
+  --color-text-muted: #625d75;
+  --color-gold: #c8a45d;
+  --color-gold-soft: #e0c98a;
+  --color-violet: #7c5cff;
+  --color-violet-deep: #1a142e;
+  --color-border: #1e1e2d;
+  --color-blueprint: #0f172a;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -25,10 +24,10 @@
   --space-16: 64px;
 
   --radius-chip: 999px;
-  --radius-input: 16px;
-  --radius-card: 24px;
-  --radius-tarot: 18px;
-  --radius-modal: 28px;
+  --radius-input: 12px;
+  --radius-card: 16px;
+  --radius-tarot: 12px;
+  --radius-modal: 20px;
 }
 
 @theme inline {
@@ -41,8 +40,7 @@
   --color-violet: var(--color-violet);
   --color-violet-deep: var(--color-violet-deep);
   --color-border: var(--color-border);
-  --color-danger-muted: var(--color-danger-muted);
-  --color-success-muted: var(--color-success-muted);
+  --color-blueprint: var(--color-blueprint);
   --color-text-secondary: var(--color-text-secondary);
   --color-text-muted: var(--color-text-muted);
   --font-sans: var(--font-inter);
@@ -56,6 +54,24 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Celestial Engine Background Pattern */
+.bg-celestial {
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(26, 20, 46, 0.4) 0%, transparent 70%),
+    linear-gradient(rgba(30, 30, 45, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 30, 45, 0.1) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+}
+
+/* Glass effect for kinetic panels */
+.glass-panel {
+  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(200, 164, 93, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
 }
 
 @media (prefers-reduced-motion: reduce) {

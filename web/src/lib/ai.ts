@@ -57,7 +57,7 @@ Strukturiere deine Antwort in folgende Abschnitte:
 **Praktischer Impuls** -- Ein kleiner, konkreter Anstoß für den Alltag. Eine Handlung, eine Beobachtung, ein Ritual -- nichts Überwältigendes, aber etwas, das die Reflexion in die Praxis trägt.`;
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "google/gemini-2.0-flash-001";
+const DEFAULT_MODEL = "openai/gpt-5.4";
 
 function buildUserMessage(req: ReadingRequest): string {
   let msg = `Frage: ${req.question}\n\nGezogene Karten:\n`;

@@ -1,37 +1,55 @@
 "use client";
 
-import { ButtonHTMLAttributes } from "react";
+import { ReactNode } from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "secondary";
-
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
+interface ButtonProps {
+  children: ReactNode;
+  onClick?: () => void;
+  className?: string;
+  variant?: "primary" | "secondary" | "ghost";
+  type?: "button" | "submit";
+  disabled?: boolean;
 }
 
-export default function Button({
-  variant = "primary",
-  className = "",
-  disabled,
+export const Button = ({
   children,
-  ...props
-}: ButtonProps) {
-  const base =
-    "inline-flex items-center justify-center font-sans font-medium px-6 min-h-[44px] rounded-[var(--radius-input)] transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed";
-
-  const variants: Record<ButtonVariant, string> = {
-    primary:
-      "bg-gradient-to-b from-gold-soft to-gold text-background hover:shadow-[0_0_20px_rgba(200,164,93,0.35)] active:scale-[0.97]",
-    secondary:
-      "bg-transparent border border-border text-text-secondary hover:border-gold hover:text-gold active:scale-[0.97]",
+  onClick,
+  className,
+  variant = "primary",
+  type = "button",
+  disabled = false,
+}: ButtonProps) => {
+  const variants = {
+    primary: "bg-gold text-background hover:bg-gold-soft shadow-[0_0_20px_rgba(200,164,93,0.2)]",
+    secondary: "border border-gold/30 text-gold hover:bg-gold/5",
+    ghost: "text-text-muted hover:text-gold transition-colors",
   };
 
   return (
-    <button
-      className={`${base} ${variants[variant]} ${className}`}
+    <motion.button
+      whileHover={!disabled ? { scale: 1.02, translateY: -2 } : {}}
+      whileTap={!disabled ? { scale: 0.98 } : {}}
+      type={type}
+      onClick={onClick}
       disabled={disabled}
-      {...props}
+      className={cn(
+        "relative h-12 px-8 rounded-full font-display font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden group",
+        variants[variant],
+        className
+      )}
     >
-      {children}
-    </button>
+      {/* Inner Mechanical Lines */}
+      {variant === "primary" && (
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-[1px] bg-white" />
+          <div className="absolute bottom-0 left-0 w-full h-[1px] bg-white" />
+        </div>
+      )}
+      <span className="relative z-10 flex items-center justify-center gap-2">
+        {children}
+      </span>
+    </motion.button>
   );
-}
+};

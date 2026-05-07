@@ -1,26 +1,29 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter, Fraunces } from "next/font/google";
+import { Fraunces, Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { CelestialBackground } from "@/components/CelestialBackground";
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
 
 const inter = Inter({
-  variable: "--font-inter",
   subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
+  subsets: ["latin"],
   variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "ESO — Dein Spiegel aus Sternen, Karten und KI",
-  description:
-    "Ziehe drei Tarot-Karten und erhalte eine symbolische Deutung auf Basis deines Geburtshoroskops, deiner Frage und aktueller Transite.",
+  title: "ESO | Cyber-Mystik-Plattform",
+  description: "Dein Spiegel aus Sternen, Karten und KI.",
 };
 
 export default function RootLayout({
@@ -29,12 +32,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="de"
-      className={`${inter.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
+    <html lang="de" className={`${fraunces.variable} ${inter.variable} ${geistMono.variable}`}>
+      <body className="antialiased min-h-screen flex flex-col selection:bg-gold/30 selection:text-gold">
+        <CelestialBackground />
+        <main className="flex-1 flex flex-col relative z-10">
+          {children}
+        </main>
       </body>
     </html>
   );

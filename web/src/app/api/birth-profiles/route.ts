@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { createBirthProfileSchema } from "@/lib/validation";
+import { geocodeCity } from "@/lib/geocoding";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,8 +15,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { birthDate, birthTime, birthCity, birthLat, birthLon, timezone, sessionToken } =
+    let { birthDate, birthTime, birthCity, birthLat, birthLon, timezone, sessionToken } =
       parsed.data;
+
+    // Automatically geocode city if coordinates are missing
+    if (birthCity && (birthLat == null || birthLon == null)) {
+      const geo = await geocodeCity(birthCity);
+      if (geo) {
+        birthLat = geo.lat;
+        birthLon = geo.lon;
+      }
+    }
 
     const profile = await prisma.birthProfile.create({
       data: {

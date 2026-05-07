@@ -1,29 +1,50 @@
 "use client";
 
-import { HTMLAttributes, ReactNode } from "react";
+import { ReactNode } from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
-interface PanelProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: "default" | "ai";
+interface PanelProps {
   children: ReactNode;
+  className?: string;
+  variant?: "default" | "raised" | "ki";
+  animate?: boolean;
 }
 
-export default function Panel({
+export const Panel = ({ 
+  children, 
+  className, 
   variant = "default",
-  className = "",
-  children,
-  ...props
-}: PanelProps) {
-  const base =
-    "rounded-[var(--radius-card)] border border-border p-6";
+  animate = true 
+}: PanelProps) => {
+  const variants = {
+    default: "glass-panel border-gold/10",
+    raised: "glass-panel border-gold/30 bg-surface-raised/40",
+    ki: "glass-panel border-violet/30 bg-violet-deep/20 shadow-[0_0_40px_rgba(124,92,255,0.1)]",
+  };
 
-  const ai =
-    variant === "ai"
-      ? "bg-[var(--color-violet-deep)] border-violet/30 shadow-[0_0_30px_rgba(124,92,255,0.08)]"
-      : "bg-surface";
+  const Wrapper = animate ? motion.div : "div";
 
   return (
-    <div className={`${base} ${ai} ${className}`} {...props}>
-      {children}
-    </div>
+    <Wrapper
+      initial={animate ? { opacity: 0, y: 20 } : undefined}
+      whileInView={animate ? { opacity: 1, y: 0 } : undefined}
+      viewport={{ once: true }}
+      className={cn(
+        "relative rounded-[var(--radius-card)] p-6 overflow-hidden",
+        variants[variant],
+        className
+      )}
+    >
+      {/* Decorative Corner Lines */}
+      <div className="absolute top-0 left-0 w-8 h-[1px] bg-gold/20" />
+      <div className="absolute top-0 left-0 w-[1px] h-8 bg-gold/20" />
+      <div className="absolute bottom-0 right-0 w-8 h-[1px] bg-gold/20" />
+      <div className="absolute bottom-0 right-0 w-[1px] h-8 bg-gold/20" />
+      
+      <div className="relative z-10">
+        {children}
+      </div>
+    </Wrapper>
   );
-}
+};

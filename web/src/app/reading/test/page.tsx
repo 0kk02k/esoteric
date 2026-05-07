@@ -3,17 +3,18 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import type { ChartResult } from "@/lib/astrology";
-import type { ReadingResponse, TarotCard } from "@/lib/ai";
+import type { ReadingResponse, TarotCard as TarotCardType } from "@/lib/ai";
 import ReadingPanel from "@/components/ReadingPanel";
 import SymbolChip from "@/components/SymbolChip";
-import Panel from "@/components/Panel";
-import Button from "@/components/Button";
+import { Panel } from "@/components/Panel";
+import { Button } from "@/components/Button";
+import { ArrowLeft, Play, Database, FileCode } from "lucide-react";
 
 const TEST_BIRTH = new Date(1990, 2, 15, 14, 30);
 const TEST_LAT = 47.3769;
 const TEST_LON = 8.5417;
 const TEST_QUESTION = "Was bedeutet dieser neue Lebensabschnitt für mich?";
-const TEST_CARDS: TarotCard[] = [
+const TEST_CARDS: TarotCardType[] = [
   { name: "Der Narr", position: "Gegenwart", upright: true },
   { name: "Der Turm", position: "Spannung", upright: true },
   { name: "Die Sterne", position: "Impuls", upright: true },
@@ -58,268 +59,157 @@ export default function TestPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          year: TEST_BIRTH.getFullYear(),
-          month: TEST_BIRTH.getMonth() + 1,
-          day: TEST_BIRTH.getDate(),
-          hour: TEST_BIRTH.getHours(),
-          minute: TEST_BIRTH.getMinutes(),
-          latitude: TEST_LAT,
-          longitude: TEST_LON,
-          timezoneOffset: 1,
-          timeUnknown: false,
+          date: TEST_BIRTH.toISOString(),
+          lat: TEST_LAT,
+          lon: TEST_LON,
         }),
       });
-      if (!chartRes.ok) throw new Error(`Chart API error: ${chartRes.status}`);
-      const chart: ChartResult = await chartRes.json();
-      const chartMs = Math.round(performance.now() - chartStart);
+      if (!chartRes.ok) throw new Error("Chart calculation failed");
+      const chartData = await chartRes.json();
+      const chartEnd = performance.now();
 
-      setState((s) => ({ ...s, chart, chartMs, step: "context" }));
-
-      const readingRequest = {
-        question: TEST_QUESTION,
-        cards: TEST_CARDS,
-        chart,
-      };
-      const contextJson = JSON.stringify(readingRequest, null, 2);
-
-      setState((s) => ({ ...s, contextJson, step: "reading" }));
+      setState((s) => ({
+        ...s,
+        step: "reading",
+        chart: chartData,
+        chartMs: Math.round(chartEnd - chartStart),
+      }));
 
       const readingRes = await fetch("/api/test/reading", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(readingRequest),
+        body: JSON.stringify({
+          question: TEST_QUESTION,
+          chart: chartData,
+          cards: TEST_CARDS,
+        }),
       });
-      if (!readingRes.ok) throw new Error(`Reading API error: ${readingRes.status}`);
-      const reading: ReadingResponse = await readingRes.json();
+      if (!readingRes.ok) throw new Error("Reading generation failed");
+      const readingData = await readingRes.json();
 
-      setState((s) => ({ ...s, reading, step: "done" }));
+      setState((s) => ({
+        ...s,
+        step: "done",
+        reading: readingData.reading,
+        contextJson: JSON.stringify(readingData.context, null, 2),
+      }));
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setState((s) => ({ ...s, error: message, step: "error" }));
+      setState((s) => ({
+        ...s,
+        step: "error",
+        error: err instanceof Error ? err.message : String(err),
+      }));
     }
   }, []);
 
-  const isRunning =
-    state.step === "chart" ||
-    state.step === "context" ||
-    state.step === "reading";
-
   return (
-    <div className="min-h-screen bg-surface px-4 py-8">
-      <div className="mx-auto max-w-2xl flex flex-col gap-8">
+    <div className="flex-1 p-4 sm:p-8">
+      <div className="mx-auto max-w-4xl flex flex-col gap-8">
         <header className="flex items-center justify-between">
-          <h1 className="font-display text-2xl font-semibold text-text tracking-tight">
-            PoC Pipeline Test
-          </h1>
-          <Link
-            href="/"
-            className="text-sm text-text-muted hover:text-gold transition-colors"
-          >
-            Zurück
-          </Link>
+           <div className="space-y-1">
+              <h1 className="font-display text-2xl text-text">Pipeline Diagnostik</h1>
+              <p className="text-xs font-mono text-gold/40 uppercase tracking-widest">System-Test-Umgebung</p>
+           </div>
+           <Link href="/" passHref legacyBehavior>
+              <Button variant="ghost" className="h-9 px-4 text-xs">
+                 <ArrowLeft className="w-4 h-4 mr-2" /> Home
+              </Button>
+           </Link>
         </header>
 
-        <section className="flex flex-col gap-4">
-          <Panel>
-            <h2 className="font-display text-sm tracking-wide text-gold mb-4">
-              Testdaten
-            </h2>
-            <div className="flex flex-col gap-2 text-sm text-text-secondary">
-              <p>
-                <span className="text-text-muted">Geburtsdatum:</span>{" "}
-                15.03.1990, 14:30 Uhr
-              </p>
-              <p>
-                <span className="text-text-muted">Ort:</span> Zürich (47.3769,
-                8.5417)
-              </p>
-              <p>
-                <span className="text-text-muted">Frage:</span> {TEST_QUESTION}
-              </p>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {TEST_CARDS.map((card) => (
-                  <SymbolChip key={card.name}>
-                    {card.name} ({card.position})
-                  </SymbolChip>
-                ))}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+           <Panel className="md:col-span-2 space-y-6">
+              <div className="flex items-center justify-between">
+                 <h2 className="text-sm font-mono text-gold/60 uppercase tracking-widest">Test-Szenario</h2>
+                 <Button 
+                    onClick={run} 
+                    disabled={state.step !== "idle" && state.step !== "done" && state.step !== "error"}
+                    className="h-9 px-4 text-xs"
+                 >
+                    <Play className="w-3 h-3 mr-2 fill-current" /> Test-Lauf starten
+                 </Button>
               </div>
-            </div>
-          </Panel>
 
-          <Button
-            onClick={run}
-            disabled={isRunning}
-            variant="primary"
-            className="self-start"
-          >
-            {isRunning ? "Pipeline läuft..." : "Pipeline starten"}
-          </Button>
-        </section>
+              <div className="space-y-4">
+                 <div className="p-4 rounded-lg bg-surface-raised/40 border border-gold/5 space-y-2">
+                    <p className="text-[10px] text-gold/40 uppercase font-mono tracking-widest">Frage</p>
+                    <p className="text-sm text-text italic">"{TEST_QUESTION}"</p>
+                 </div>
+                 
+                 <div className="p-4 rounded-lg bg-surface-raised/40 border border-gold/5 space-y-3">
+                    <p className="text-[10px] text-gold/40 uppercase font-mono tracking-widest">Karten</p>
+                    <div className="flex gap-2">
+                       {TEST_CARDS.map(c => (
+                          <SymbolChip key={c.name} variant="gold">{c.name}</SymbolChip>
+                       ))}
+                    </div>
+                 </div>
+              </div>
 
-        {state.step !== "idle" && (
-          <PipelineSteps step={state.step} error={state.error} />
-        )}
-
-        {state.chart && (
-          <Panel>
-            <h2 className="font-display text-sm tracking-wide text-gold mb-4">
-              Step 1: Natalchart
-              {state.chartMs !== null && (
-                <span className="ml-2 text-text-muted font-mono text-xs">
-                  {state.chartMs} ms
-                </span>
+              {state.reading && (
+                 <div className="mt-8 space-y-4">
+                    <h3 className="text-xs font-mono text-violet uppercase tracking-widest">Output</h3>
+                    <ReadingPanel model={state.reading.model}>
+                       {state.reading.text}
+                    </ReadingPanel>
+                 </div>
               )}
-            </h2>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {state.chart.planets.map((p) => (
-                <SymbolChip key={p.name}>
-                  {p.name} {p.sign} {p.degree}°
-                </SymbolChip>
-              ))}
-            </div>
-            {state.chart.ascendant && (
-              <p className="text-sm text-text-secondary">
-                <span className="text-text-muted">Aszendent:</span>{" "}
-                {state.chart.ascendant.sign} {state.chart.ascendant.degree}°
-              </p>
-            )}
-            {state.chart.aspects.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {state.chart.aspects.map((a, i) => (
-                  <SymbolChip key={i}>
-                    {a.planet1} {a.type} {a.planet2} ({a.orb}°)
-                  </SymbolChip>
-                ))}
-              </div>
-            )}
-          </Panel>
-        )}
 
-        {state.contextJson && (
-          <Panel>
-            <button
-              type="button"
-              onClick={() => setContextOpen((v) => !v)}
-              className="flex items-center gap-2 font-display text-sm tracking-wide text-gold w-full text-left"
-            >
-              <span
-                className={`transition-transform ${contextOpen ? "rotate-90" : ""}`}
-              >
-                ▸
-              </span>
-              Step 2: Reading Context (JSON)
-            </button>
-            {contextOpen && (
-              <pre className="mt-3 p-4 bg-surface-raised rounded-[var(--radius-card)] overflow-x-auto text-xs font-mono text-text-secondary leading-relaxed">
-                {state.contextJson}
-              </pre>
-            )}
-          </Panel>
-        )}
+              {state.error && (
+                 <Panel className="border-danger-muted/30 bg-danger-muted/5">
+                    <p className="text-danger-muted font-mono text-xs">{state.error}</p>
+                 </Panel>
+              )}
+           </Panel>
 
-        {(state.step === "reading" || state.step === "done") && (
-          <ReadingPanel loading={state.step === "reading"}>
-            {state.reading?.text}
-          </ReadingPanel>
-        )}
+           <div className="space-y-6">
+              <Panel variant="raised">
+                 <div className="flex items-center gap-2 mb-4">
+                    <Database className="w-4 h-4 text-gold/40" />
+                    <h3 className="text-xs font-mono text-gold/60 uppercase tracking-widest">Status</h3>
+                 </div>
+                 
+                 <div className="space-y-4">
+                    <div className="flex justify-between items-center text-xs">
+                       <span className="text-text-muted">Phase</span>
+                       <span className={cn(
+                          "font-mono uppercase px-2 py-0.5 rounded-full bg-gold/5",
+                          state.step === "done" ? "text-success-muted" : "text-gold"
+                       )}>{state.step}</span>
+                    </div>
+                    {state.chartMs && (
+                       <div className="flex justify-between items-center text-xs">
+                          <span className="text-text-muted">Astro Latency</span>
+                          <span className="font-mono text-gold">{state.chartMs}ms</span>
+                       </div>
+                    )}
+                 </div>
+              </Panel>
 
-        {state.reading && (
-          <Panel>
-            <h2 className="font-display text-sm tracking-wide text-gold mb-4">
-              Metriken
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-              <MetricItem label="Chart" value={`${state.chartMs} ms`} />
-              <MetricItem
-                label="AI Latenz"
-                value={`${state.reading.latencyMs} ms`}
-              />
-              <MetricItem
-                label="Tokens"
-                value={String(state.reading.tokensUsed)}
-              />
-              <MetricItem label="Modell" value={state.reading.model} />
-            </div>
-          </Panel>
-        )}
-
-        {state.error && (
-          <Panel className="border-red-500/40">
-            <h2 className="font-display text-sm tracking-wide text-red-400 mb-2">
-              Fehler
-            </h2>
-            <p className="text-sm text-text-secondary font-mono whitespace-pre-wrap">
-              {state.error}
-            </p>
-          </Panel>
-        )}
+              {state.contextJson && (
+                 <Panel>
+                    <div className="flex items-center justify-between mb-4">
+                       <div className="flex items-center gap-2">
+                          <FileCode className="w-4 h-4 text-gold/40" />
+                          <h3 className="text-xs font-mono text-gold/60 uppercase tracking-widest">Context</h3>
+                       </div>
+                       <button 
+                          onClick={() => setContextOpen(!contextOpen)}
+                          className="text-[10px] font-mono text-gold hover:underline"
+                       >
+                          {contextOpen ? "Verbergen" : "Anzeigen"}
+                       </button>
+                    </div>
+                    {contextOpen && (
+                       <pre className="text-[10px] text-text-muted font-mono leading-tight max-h-60 overflow-y-auto bg-black/40 p-3 rounded border border-gold/5">
+                          {state.contextJson}
+                       </pre>
+                    )}
+                 </Panel>
+              )}
+           </div>
+        </div>
       </div>
-    </div>
-  );
-}
-
-function PipelineSteps({
-  step,
-  error,
-}: {
-  step: PipelineStep;
-  error: string | null;
-}) {
-  const steps = [
-    { id: "chart", label: "1. Chart berechnen" },
-    { id: "context", label: "2. Context assemblieren" },
-    { id: "reading", label: "3. AI Reading" },
-    { id: "done", label: "4. Fertig" },
-  ];
-
-  const order: PipelineStep[] = [
-    "chart",
-    "context",
-    "reading",
-    "done",
-    "error",
-  ];
-  const currentIdx = order.indexOf(step);
-
-  return (
-    <div className="flex items-center gap-2 text-xs font-mono text-text-muted">
-      {steps.map((s, i) => {
-        const stepIdx = order.indexOf(s.id as PipelineStep);
-        const active = currentIdx === stepIdx;
-        const completed = currentIdx > stepIdx;
-
-        return (
-          <span
-            key={s.id}
-            className={
-              active
-                ? "text-gold"
-                : completed
-                  ? "text-text-secondary"
-                  : ""
-            }
-          >
-            {completed ? "✓" : active ? "●" : "○"} {s.label}
-            {i < steps.length - 1 && (
-              <span className="mx-1 text-text-muted">→</span>
-            )}
-          </span>
-        );
-      })}
-      {error && (
-        <span className="text-red-400 ml-2">
-          Fehler: {error.slice(0, 60)}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function MetricItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-text-muted text-xs">{label}</span>
-      <span className="text-text font-mono text-sm">{value}</span>
     </div>
   );
 }

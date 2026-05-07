@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Button from "./Button";
+import { Button } from "./Button";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 type FeedbackFormProps = {
   readingId: string;
@@ -54,67 +56,80 @@ export default function FeedbackForm({ readingId, onSubmit }: FeedbackFormProps)
 
   if (submitted) {
     return (
-      <div className="text-center py-4">
-        <p className="text-sm text-success-muted">Danke für dein Feedback!</p>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center py-6 bg-gold/5 rounded-xl border border-gold/10"
+      >
+        <p className="text-sm text-gold font-display italic">Danke für deine Resonanz.</p>
+      </motion.div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <p className="text-sm text-text-secondary">Wie hat dir diese Deutung gefallen?</p>
-
-      <div className="flex gap-3">
-        {(["positiv", "teilweise", "negativ"] as const).map((r) => (
-          <button
-            key={r}
-            type="button"
-            onClick={() => setRating(r)}
-            className={`px-4 py-2 rounded-[var(--radius-input)] text-sm font-medium transition-all ${
-              rating === r
-                ? "bg-gold text-background"
-                : "bg-surface-raised text-text-secondary hover:border-gold border border-transparent"
-            }`}
-          >
-            {r === "positiv" ? "Gut" : r === "teilweise" ? "Teilweise" : "Nicht hilfreich"}
-          </button>
-        ))}
+    <div className="flex flex-col gap-6">
+      <div className="space-y-4">
+        <p className="text-[10px] font-mono text-gold/60 uppercase tracking-widest px-1">Bewertung</p>
+        <div className="grid grid-cols-3 gap-3">
+          {(["positiv", "teilweise", "negativ"] as const).map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => setRating(r)}
+              className={cn(
+                "px-3 py-2.5 rounded-xl text-[10px] font-mono uppercase tracking-wider transition-all border",
+                rating === r
+                  ? "bg-gold/20 text-gold border-gold/40 shadow-[0_0_15px_rgba(200,164,93,0.1)]"
+                  : "bg-bg/40 text-text-muted border-gold/5 hover:border-gold/20"
+              )}
+            >
+              {r === "positiv" ? "Präzise" : r === "teilweise" ? "Teils" : "Unklar"}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {TAGS.map((tag) => (
-          <button
-            key={tag.value}
-            type="button"
-            onClick={() => toggleTag(tag.value)}
-            className={`text-xs font-mono px-3 py-1 rounded-full transition-all ${
-              selectedTags.includes(tag.value)
-                ? "bg-violet-deep text-violet border border-violet/30"
-                : "bg-surface-raised text-text-muted border border-transparent hover:border-border"
-            }`}
-          >
-            {tag.label}
-          </button>
-        ))}
+      <div className="space-y-4">
+        <p className="text-[10px] font-mono text-gold/60 uppercase tracking-widest px-1">Nuancen</p>
+        <div className="flex flex-wrap gap-2">
+          {TAGS.map((tag) => (
+            <button
+              key={tag.value}
+              type="button"
+              onClick={() => toggleTag(tag.value)}
+              className={cn(
+                "text-[9px] font-mono px-3 py-1.5 rounded-full transition-all border",
+                selectedTags.includes(tag.value)
+                  ? "bg-violet-deep/40 text-violet border-violet/40 shadow-[0_0_10px_rgba(124,92,255,0.1)]"
+                  : "bg-surface-raised/40 text-text-muted border-gold/5 hover:border-gold/20"
+              )}
+            >
+              {tag.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <textarea
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        placeholder="Optional: Was hat dir gefehlt oder besonders geholfen?"
-        rows={2}
-        className="w-full bg-surface-raised border border-border rounded-[var(--radius-input)] px-4 py-3 text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-gold/50 resize-none"
-      />
+      <div className="space-y-4">
+        <p className="text-[10px] font-mono text-gold/60 uppercase tracking-widest px-1">Anmerkung (Optional)</p>
+        <textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Wie hat dich die Deutung berührt?"
+          rows={3}
+          className="w-full bg-bg/50 border border-gold/10 rounded-2xl px-5 py-4 text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-gold/30 transition-all resize-none shadow-inner"
+        />
+      </div>
 
-      {error && <p className="text-xs text-danger-muted">{error}</p>}
+      {error && <p className="text-xs text-danger-muted font-mono">{error}</p>}
 
       <Button
         onClick={handleSubmit}
         disabled={!rating || submitting}
         variant="secondary"
-        className="self-start"
+        className="w-full sm:w-auto"
       >
-        {submitting ? "Wird gesendet..." : "Feedback senden"}
+        {submitting ? "Übertragung..." : "Feedback senden"}
       </Button>
     </div>
   );

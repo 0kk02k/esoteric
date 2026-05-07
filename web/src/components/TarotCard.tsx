@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { Sparkles } from "lucide-react";
 
 type TarotCardProps = {
   name: string;
@@ -18,7 +20,7 @@ const POSITION_LABELS: Record<string, string> = {
   impuls: "Impuls",
 };
 
-export default function TarotCardComponent({
+export default function TarotCard({
   name,
   position,
   upright,
@@ -27,81 +29,111 @@ export default function TarotCardComponent({
   revealed,
   onReveal,
 }: TarotCardProps) {
-  const [flipping, setFlipping] = useState(false);
-
-  const handleClick = () => {
-    if (revealed || flipping) return;
-    setFlipping(true);
-    setTimeout(() => {
-      onReveal?.();
-      setFlipping(false);
-    }, 400);
-  };
-
   const positionLabel = POSITION_LABELS[position] ?? position;
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <span className="text-xs font-mono text-gold tracking-wide uppercase">
-        {positionLabel}
-      </span>
-      <div
-        className="relative w-[140px] h-[220px] cursor-pointer"
-        style={{ perspective: "800px" }}
-        onClick={handleClick}
-        role={revealed ? undefined : "button"}
-        tabIndex={revealed ? undefined : 0}
-        aria-label={revealed ? `${name} — ${positionLabel}` : `Karte aufdecken: ${positionLabel}`}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") handleClick();
-        }}
+    <div className="flex flex-col items-center gap-4">
+      <motion.span 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-[10px] font-mono text-gold/60 tracking-[0.2em] uppercase"
       >
-        <div
-          className="absolute inset-0 transition-transform duration-500"
-          style={{
-            transformStyle: "preserve-3d",
-            transform: revealed || flipping ? "rotateY(180deg)" : "rotateY(0deg)",
+        {positionLabel}
+      </motion.span>
+      
+      <div className="perspective-[1000px]">
+        <motion.div
+          onClick={!revealed ? onReveal : undefined}
+          initial={false}
+          animate={{ rotateY: revealed ? 180 : 0 }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 100, 
+            damping: 20,
+            mass: 1
           }}
+          className={cn(
+            "relative w-[120px] h-[190px] sm:w-[150px] sm:h-[240px] cursor-pointer preserve-3d transition-shadow duration-500",
+            revealed ? "cursor-default" : "hover:shadow-[0_0_30px_rgba(200,164,93,0.2)]"
+          )}
         >
-          {/* Back */}
-          <div
-            className="absolute inset-0 flex items-center justify-center rounded-[var(--radius-tarot)] border-2 border-gold/30 bg-surface-raised"
-            style={{ backfaceVisibility: "hidden" }}
-          >
-            <div className="flex flex-col items-center gap-2 text-gold/50">
-              <span className="text-3xl">&#9734;</span>
-              <span className="text-xs font-mono">ESO</span>
-            </div>
+          {/* Card Back (Engine Motif) */}
+          <div className="absolute inset-0 backface-hidden rounded-[var(--radius-tarot)] border border-gold/30 bg-surface-raised flex items-center justify-center overflow-hidden">
+             {/* Mechanical Inner Rings */}
+             <div className="absolute inset-4 border border-gold/10 rounded-full" />
+             <div className="absolute inset-8 border border-gold/5 rounded-full" />
+             
+             <div className="relative flex flex-col items-center gap-3">
+                <div className="w-10 h-10 rounded-full border border-gold/40 flex items-center justify-center group-hover:scale-110 transition-transform">
+                   <Sparkles className="w-5 h-5 text-gold/60" />
+                </div>
+                <span className="text-[10px] font-mono text-gold/40 tracking-widest uppercase">ESO</span>
+             </div>
+
+             {/* Corner Markers */}
+             <div className="absolute top-2 left-2 w-1.5 h-1.5 border-t border-l border-gold/40" />
+             <div className="absolute top-2 right-2 w-1.5 h-1.5 border-t border-r border-gold/40" />
+             <div className="absolute bottom-2 left-2 w-1.5 h-1.5 border-b border-l border-gold/40" />
+             <div className="absolute bottom-2 right-2 w-1.5 h-1.5 border-b border-r border-gold/40" />
           </div>
 
-          {/* Front */}
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-[var(--radius-tarot)] border-2 border-gold/50 bg-surface p-3 text-center"
-            style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
-          >
-            <span className="text-xs text-text-muted font-mono">
-              {!upright && "△ "}
-              {upright ? "aufrecht" : "umgekehrt"}
-            </span>
-            <span className="text-sm font-display font-semibold text-text leading-tight">
-              {name}
-            </span>
-            {(element || zodiacAssociation) && (
-              <div className="flex flex-wrap gap-1 justify-center mt-1">
-                {element && (
-                  <span className="text-[10px] font-mono text-violet bg-violet-deep px-2 py-0.5 rounded-full">
-                    {element}
-                  </span>
-                )}
-                {zodiacAssociation && (
-                  <span className="text-[10px] font-mono text-gold bg-gold/10 px-2 py-0.5 rounded-full">
-                    {zodiacAssociation}
-                  </span>
-                )}
-              </div>
-            )}
+          {/* Card Front (Symbolic) */}
+          <div className="absolute inset-0 backface-hidden rounded-[var(--radius-tarot)] border border-gold/50 bg-surface p-4 flex flex-col items-center justify-between text-center rotate-y-180">
+            <div className="flex flex-col items-center gap-2">
+              <span className={cn(
+                "text-[9px] font-mono tracking-widest uppercase",
+                upright ? "text-success-muted/80" : "text-danger-muted/80"
+              )}>
+                {!upright && "△ "}
+                {upright ? "aufrecht" : "umgekehrt"}
+              </span>
+              
+              <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-gold/30 to-transparent my-2" />
+            </div>
+
+            <div className="flex flex-col items-center gap-4">
+               {/* Card Image Placeholder / Symbol */}
+               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-gold/20 flex items-center justify-center relative">
+                  <Sparkles className="w-8 h-8 text-gold/40" />
+                  {/* Rotating orbital */}
+                  <div className="absolute inset-0 animate-[spin_10s_linear_infinite]">
+                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gold/60" />
+                  </div>
+               </div>
+               
+               <h3 className="text-sm sm:text-base font-display font-medium text-text leading-tight px-1">
+                 {name}
+               </h3>
+            </div>
+
+            <div className="w-full space-y-3">
+               <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
+               
+               <div className="flex flex-wrap gap-1.5 justify-center">
+                  <AnimatePresence>
+                    {element && (
+                      <motion.span 
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="text-[9px] font-mono text-violet bg-violet-deep/30 border border-violet/20 px-2 py-0.5 rounded-full"
+                      >
+                        {element}
+                      </motion.span>
+                    )}
+                    {zodiacAssociation && (
+                      <motion.span 
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="text-[9px] font-mono text-gold bg-gold/10 border border-gold/20 px-2 py-0.5 rounded-full"
+                      >
+                        {zodiacAssociation}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+               </div>
+            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
