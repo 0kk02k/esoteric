@@ -301,11 +301,45 @@ Der Astrologie-Service liefert reproduzierbare, versionierte und sichere Berechn
 
 ---
 
-## Stufe 4: KI-, Prompt- und Safety-System
+## Stufe 4: KI-, Prompt- und Safety-System (ABGESCHLOSSEN)
 
 ### Ziel
 
 Die KI erzeugt konsistente, nicht-direktive und sichere Deutungen auf Basis strukturierter Daten.
+
+### Ergebnis
+
+- **Prompt-Version**: 1.0 -- 6 Abschnitte (Einstieg, Kernthema, Tarot-Deutung, Astrologischer Kontext, Reflexionsfragen, Praktischer Impuls)
+- **Safety-Version**: 1.0 -- Keyword-basierte Input-Klassifikation + Output-Check
+- **KI-Provider**: OpenRouter mit `google/gemini-2.0-flash-001`
+- **Tests**: 37 Safety + 49 Astrologie = 86 bestanden
+- **Krisenresponse**: DACH-Hotlines (DE/AT/CH)
+
+### Implementierung
+
+| Datei | Funktion |
+|-------|----------|
+| `src/lib/ai.ts` | OpenRouter-Client mit Safety-Integration |
+| `src/lib/safety.ts` | Input-Klassifikation, Output-Check, Crisis-Response, Safety-Logging |
+| `src/lib/__tests__/safety.test.ts` | 37 Testfaelle |
+| `src/app/api/test/reading/route.ts` | Test-API-Route |
+
+### Safety-Kategorien
+
+| Kategorie | Action | Keywords (Beispiele) |
+|-----------|--------|---------------------|
+| crisis | crisis_response | Suizid, umbringen, vergewaltigt, Missbrauch |
+| medical | redirect | Diagnose, Arzt aufsuchen, Medikamente |
+| legal | redirect | Klage, scheiden, Erbrecht |
+| financial | redirect | Krypto, Aktien, Finanzberatung |
+| deterministic | proceed + adjustment | "Wird er mich heiraten?" |
+| normal | proceed | Standardfragen |
+
+### Bekannte Grenzfaelle
+
+- Keyword-basiert -- keine semantische NLP-Analyse
+- False Positives bei mehrdeutigen Woertern moeglich
+- Output-Check deckt nur bekannte Muster
 
 ### Aufgaben
 
