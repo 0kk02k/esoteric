@@ -30,6 +30,13 @@ build/
 .DS_Store
 Thumbs.db
 
+# Database
+*.db
+*.db-journal
+
+# Generated
+web/src/generated/
+
 # Swiss Ephemeris binaries (large)
 astro/ephemeris/*.se1
 
