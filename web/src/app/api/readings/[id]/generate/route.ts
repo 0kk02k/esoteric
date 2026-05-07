@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { generateReading } from "@/lib/ai";
 import type { TarotCard as AITarotCard } from "@/lib/ai";
-import { calculateNatalChart } from "@/lib/astrology";
+import type { ChartResult } from "@/lib/astrology";
 
 export async function POST(
   request: NextRequest,
@@ -36,29 +36,38 @@ export async function POST(
       upright: draw.upright,
     }));
 
-    let chart;
+    let chart: ChartResult | undefined;
     if (reading.birthProfile?.birthLat != null && reading.birthProfile?.birthLon != null) {
       const bp = reading.birthProfile;
       const bd = new Date(bp.birthDate);
-      const dateStr = bd.toISOString().split("T")[0];
-      const [year, month, day] = dateStr.split("-").map(Number);
-      let hour = 12,
-        minute = 0;
-      if (bp.birthTime) {
-        [hour, minute] = bp.birthTime.split(":").map(Number);
-      }
-      const date = new Date(year, month - 1, day, hour, minute);
       try {
-        chart = await calculateNatalChart(date, bp.birthLat!, bp.birthLon!);
+        const chartRes = await fetch(`${request.nextUrl.origin}/api/astrology/chart`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            year: bd.getFullYear(),
+            month: bd.getMonth() + 1,
+            day: bd.getDate(),
+            hour: 12,
+            minute: 0,
+            latitude: bp.birthLat,
+            longitude: bp.birthLon,
+            timezoneOffset: -(bd.getTimezoneOffset() / 60),
+            timeUnknown: !bp.birthTime,
+          }),
+        });
+        if (chartRes.ok) {
+          chart = await chartRes.json();
+        }
       } catch (err) {
-        console.warn("[generate] Chart calculation failed, proceeding without chart:", err);
+        console.warn("[generate] Chart fetch failed, proceeding without chart:", err);
       }
     }
 
     const result = await generateReading({
       question: reading.question,
       cards,
-      chart: chart ?? undefined,
+      chart,
       sessionToken: reading.sessionToken ?? undefined,
     });
 
@@ -72,7 +81,6 @@ export async function POST(
         latencyMs: result.latencyMs,
         promptVersion: result.promptVersion,
         safetyVersion: result.safetyVersion,
-        completedAt: new Date(),
         contextJson: JSON.stringify({ cards, chart: chart ? "included" : null }),
       },
     });
