@@ -88,7 +88,7 @@ export default function TarotCard({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.7, opacity: 0 }}
               transition={{ type: "spring", stiffness: 200, damping: 25 }}
-              className="w-[440px] h-[600px] sm:w-[560px] sm:h-[760px] rounded-[var(--radius-tarot)] border border-gold/50 overflow-hidden"
+              className="w-[55vh] max-w-[480px] rounded-[var(--radius-tarot)] border border-gold/50 overflow-hidden aspect-[5/9]"
               onClick={(e) => e.stopPropagation()}
             >
               {!imageError ? (
@@ -131,7 +131,7 @@ export default function TarotCard({
               mass: 1,
             }}
             className={cn(
-              "relative w-[200px] h-[280px] sm:w-[280px] sm:h-[380px] cursor-pointer preserve-3d transition-shadow duration-500",
+              "relative w-[200px] h-[360px] sm:w-[280px] sm:h-[504px] cursor-pointer preserve-3d transition-shadow duration-500",
               revealed && "hover:shadow-[0_0_30px_rgba(200,164,93,0.2)]"
             )}
           >
