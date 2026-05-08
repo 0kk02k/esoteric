@@ -565,7 +565,7 @@ export default function ReadingPage() {
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.2 }}
-                                className="scale-110 sm:scale-125"
+                                className="scale-105 sm:scale-110"
                               >
                                 <TarotCard
                                   name={card.name}

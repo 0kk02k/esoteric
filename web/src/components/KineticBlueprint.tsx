@@ -98,7 +98,7 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
                   </div>
                 </div>
                 {cardData && (
-                  <div className="shrink-0 scale-90 origin-top md:origin-right">
+                  <div className="shrink-0 origin-top md:origin-right">
                     <TarotCard {...cardData} revealed={true} />
                   </div>
                 )}

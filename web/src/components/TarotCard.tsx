@@ -83,7 +83,7 @@ export default function TarotCard({
             mass: 1
           }}
           className={cn(
-            "relative w-[120px] h-[190px] sm:w-[150px] sm:h-[240px] cursor-pointer preserve-3d transition-shadow duration-500",
+            "relative w-[160px] h-[250px] sm:w-[220px] sm:h-[340px] cursor-pointer preserve-3d transition-shadow duration-500",
             revealed ? "cursor-default" : "hover:shadow-[0_0_30px_rgba(200,164,93,0.2)]"
           )}
         >
