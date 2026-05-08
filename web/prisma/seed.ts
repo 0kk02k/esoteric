@@ -1,5 +1,6 @@
 import { PrismaClient } from "../src/generated/prisma/client";
 
+// @ts-expect-error - Prisma v7 typing issue with empty constructor
 const prisma = new PrismaClient();
 
 // ---------------------------------------------------------------------------
