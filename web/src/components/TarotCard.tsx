@@ -32,10 +32,33 @@ export default function TarotCard({
 }: TarotCardProps) {
   const positionLabel = POSITION_LABELS[position] ?? position;
   
-  // Format the name exactly like the python script to find the generated image
   const coreName = name.split("–")[0].trim();
-  const cleanImageName = coreName.replace(/ /g, "_").replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").toLowerCase() + ".png";
-  const imagePath = `/tarot/cards/${cleanImageName}`;
+
+  const clean = (s: string) =>
+    s.replace(/ /g, "_").replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue")
+      .replace(/ß/g, "ss").toLowerCase();
+
+  const IMAGE_OVERRIDES: Record<string, string> = {
+    "Das Glücksrad": "das_rad_des_schicksals",
+    "Gerechtigkeit": "die_gerechtigkeit",
+    "Mässigkeit": "die_maessigkeit",
+  };
+
+  const ARTICLE_PREFIX: Record<string, string> = {
+    Ass: "das", Bube: "der", Ritter: "der", Königin: "die", König: "der",
+  };
+
+  let imageFile: string;
+  if (IMAGE_OVERRIDES[coreName]) {
+    imageFile = IMAGE_OVERRIDES[coreName] + ".png";
+  } else {
+    const firstWord = coreName.split(" ")[0];
+    const article = ARTICLE_PREFIX[firstWord];
+    const fullName = article ? `${article} ${coreName}` : coreName;
+    imageFile = clean(fullName) + ".png";
+  }
+
+  const imagePath = `/tarot/cards/${imageFile}`;
   const [imageError, setImageError] = useState(false);
 
   return (
