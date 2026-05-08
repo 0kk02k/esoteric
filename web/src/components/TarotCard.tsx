@@ -88,14 +88,14 @@ export default function TarotCard({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.7, opacity: 0 }}
               transition={{ type: "spring", stiffness: 200, damping: 25 }}
-              className="w-[300px] h-[470px] sm:w-[380px] sm:h-[590px] rounded-[var(--radius-tarot)] border border-gold/50 overflow-hidden"
+              className="w-[440px] h-[600px] sm:w-[560px] sm:h-[760px] rounded-[var(--radius-tarot)] border border-gold/50 overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {!imageError ? (
                 <img
                   src={imagePath}
                   alt={name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-bottom"
                 />
               ) : (
                 <div className="w-full h-full bg-surface flex items-center justify-center">
@@ -131,7 +131,7 @@ export default function TarotCard({
               mass: 1,
             }}
             className={cn(
-              "relative w-[160px] h-[250px] sm:w-[220px] sm:h-[340px] cursor-pointer preserve-3d transition-shadow duration-500",
+              "relative w-[200px] h-[280px] sm:w-[280px] sm:h-[380px] cursor-pointer preserve-3d transition-shadow duration-500",
               revealed && "hover:shadow-[0_0_30px_rgba(200,164,93,0.2)]"
             )}
           >
@@ -159,7 +159,7 @@ export default function TarotCard({
                 <img
                   src={imagePath}
                   alt={name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-bottom"
                   onError={() => setImageError(true)}
                 />
               ) : (
