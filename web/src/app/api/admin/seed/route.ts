@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
-import { main as seedDatabase } from "../../../../prisma/seed";
+import { main as seedDatabase } from "../../../../../prisma/seed";
 
 export async function GET(request: NextRequest) {
   try {
