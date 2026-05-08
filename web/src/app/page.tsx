@@ -46,8 +46,8 @@ export default function Home() {
           transition={{ delay: 0.5 }}
           className="text-4xl sm:text-7xl font-display font-semibold tracking-tight text-text leading-[1.1] max-w-3xl mb-6"
         >
-          Die Mechanik <br />
-          <span className="text-gold italic font-medium">deiner Seele.</span>
+          Kybernetisches <br />
+          <span className="text-gold italic font-medium">Grimoire.</span>
         </motion.h1>
 
         <motion.p 
