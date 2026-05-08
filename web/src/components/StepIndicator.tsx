@@ -2,12 +2,13 @@
 
 import { cn } from "@/lib/utils";
 
-type Step = "question" | "birth" | "drawing" | "generating" | "result";
+type Step = "question" | "birth" | "stellar" | "drawing" | "generating" | "result";
 
 const STEPS: { id: Step; label: string }[] = [
   { id: "question", label: "Fokus" },
   { id: "birth", label: "Kosmos" },
-  { id: "drawing", label: "Ziehung" },
+  { id: "stellar", label: "Feld" },
+  { id: "drawing", label: "Enthüllung" },
   { id: "generating", label: "Synthese" },
   { id: "result", label: "Spiegel" },
 ];

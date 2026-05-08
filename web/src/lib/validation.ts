@@ -62,6 +62,10 @@ export const createReadingSchema = z.object({
   birthProfileId: z.string().optional(),
   questionCategory: questionCategorySchema,
   sessionToken: z.string().optional(),
+  selectedCardIds: z
+    .array(z.string())
+    .length(3, "Exactly 3 card IDs must be selected")
+    .optional(),
 });
 
 export const createFeedbackSchema = z.object({

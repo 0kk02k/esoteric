@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { question, birthProfileId, questionCategory, sessionToken } =
+    const { question, birthProfileId, questionCategory, sessionToken, selectedCardIds } =
       parsed.data;
 
     const identifier = userId ? { userId } : { sessionToken: sessionToken || undefined };
@@ -36,33 +36,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Draw 3 random tarot cards
-    const totalCount = await prisma.tarotCard.count();
-    if (totalCount < 3) {
-      return NextResponse.json(
-        { error: "Not enough tarot cards in database" },
-        { status: 500 }
+    let drawnCards: { id: string }[];
+
+    if (selectedCardIds && selectedCardIds.length === 3) {
+      // User-selected cards (from StellarField interaction)
+      const cards = await prisma.tarotCard.findMany({
+        where: { id: { in: selectedCardIds } },
+      });
+
+      if (cards.length !== 3) {
+        return NextResponse.json(
+          { error: "One or more selected card IDs are invalid" },
+          { status: 400 }
+        );
+      }
+
+      // Preserve user's selection order
+      drawnCards = selectedCardIds.map((id) => cards.find((c) => c.id === id)!);
+    } else {
+      // Fallback: random selection (legacy behavior)
+      const totalCount = await prisma.tarotCard.count();
+      if (totalCount < 3) {
+        return NextResponse.json(
+          { error: "Not enough tarot cards in database" },
+          { status: 500 }
+        );
+      }
+
+      const offsets: number[] = [];
+      while (offsets.length < 3) {
+        const offset = Math.floor(Math.random() * totalCount);
+        if (!offsets.includes(offset)) {
+          offsets.push(offset);
+        }
+      }
+
+      drawnCards = await Promise.all(
+        offsets.map(async (offset) => {
+          const cards = await prisma.tarotCard.findMany({
+            take: 1,
+            skip: offset,
+          });
+          return cards[0]!;
+        })
       );
     }
-
-    // Pick 3 unique random offsets for card selection
-    const offsets: number[] = [];
-    while (offsets.length < 3) {
-      const offset = Math.floor(Math.random() * totalCount);
-      if (!offsets.includes(offset)) {
-        offsets.push(offset);
-      }
-    }
-
-    const drawnCards = await Promise.all(
-      offsets.map(async (offset) => {
-        const cards = await prisma.tarotCard.findMany({
-          take: 1,
-          skip: offset,
-        });
-        return cards[0];
-      })
-    );
 
     const positions: string[] = ["gegenwart", "spannung", "impuls"];
 

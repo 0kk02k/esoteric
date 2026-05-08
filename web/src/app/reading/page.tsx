@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import StepIndicator from "@/components/StepIndicator";
 import TarotCard from "@/components/TarotCard";
+import StellarField from "@/components/StellarField";
 import FeedbackForm from "@/components/FeedbackForm";
 import SymbolChip from "@/components/SymbolChip";
 import { Panel } from "@/components/Panel";
@@ -16,7 +17,7 @@ import type { ChartResponse } from "@/lib/astrology";
 import { getOrCreateSessionToken } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
-type Step = "question" | "birth" | "drawing" | "generating" | "result";
+type Step = "question" | "birth" | "stellar" | "drawing" | "generating" | "result";
 
 type DrawnCard = {
   id: string;
@@ -38,6 +39,8 @@ type ReadingState = {
   birthProfileId: string | null;
   readingId: string | null;
   chart: ChartResponse | null;
+  shuffledDeck: string[];
+  selectedCardIds: string[];
   cards: DrawnCard[];
   revealed: boolean[];
   result: ReadingResponse | null;
@@ -60,6 +63,8 @@ const INITIAL_STATE: ReadingState = {
   birthProfileId: null,
   readingId: null,
   chart: null,
+  shuffledDeck: [],
+  selectedCardIds: [],
   cards: [],
   revealed: [false, false, false],
   result: null,
@@ -116,7 +121,7 @@ export default function ReadingPage() {
     setState((s) => ({ ...s, step: "birth", error: null }));
   };
 
-  const createReading = useCallback(async (question: string, category: string, birthProfileId: string | null) => {
+  const createReading = useCallback(async (question: string, category: string, birthProfileId: string | null, selectedCardIds: string[]) => {
     try {
       const res = await fetch("/api/readings", {
         method: "POST",
@@ -126,6 +131,7 @@ export default function ReadingPage() {
           questionCategory: category,
           birthProfileId: birthProfileId ?? undefined,
           sessionToken: state.sessionToken || undefined,
+          selectedCardIds,
         }),
       });
       if (!res.ok) {
@@ -149,17 +155,29 @@ export default function ReadingPage() {
         element: d.card.element,
         zodiacAssociation: d.card.zodiacAssociation,
       }));
-      setState((s) => ({ ...s, readingId: reading.id, cards }));
+      setState((s) => ({ ...s, readingId: reading.id, cards, step: "drawing" }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setState((s) => ({ ...s, error: msg }));
     }
   }, [state.sessionToken]);
 
+  const fetchShuffledDeck = useCallback(async () => {
+    try {
+      const res = await fetch("/api/tarot/shuffle");
+      if (!res.ok) throw new Error(`Shuffle error: ${res.status}`);
+      const data = await res.json();
+      setState((s) => ({ ...s, shuffledDeck: data.cardIds, step: "stellar" }));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setState((s) => ({ ...s, error: msg }));
+    }
+  }, []);
+
   const submitBirth = useCallback(async () => {
     if (!state.includeBirth) {
-      setState((s) => ({ ...s, step: "drawing" }));
-      createReading(state.question, state.questionCategory, null);
+      setState((s) => ({ ...s, step: "stellar" }));
+      fetchShuffledDeck();
       return;
     }
 
@@ -201,13 +219,18 @@ export default function ReadingPage() {
         chartData = await chartRes.json();
       }
       
-      setState((s) => ({ ...s, birthProfileId: bp.id, chart: chartData, step: "drawing" }));
-      createReading(state.question, state.questionCategory, bp.id);
+      setState((s) => ({ ...s, birthProfileId: bp.id, chart: chartData }));
+      fetchShuffledDeck();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setState((s) => ({ ...s, error: msg }));
     }
-  }, [state.includeBirth, state.birthDate, state.birthTime, state.birthCity, state.question, state.questionCategory, createReading, state.sessionToken]);
+  }, [state.includeBirth, state.birthDate, state.birthTime, state.birthCity, state.sessionToken, fetchShuffledDeck]);
+
+  const handleStellarComplete = useCallback((selectedCardIds: string[]) => {
+    setState((s) => ({ ...s, selectedCardIds }));
+    createReading(state.question, state.questionCategory, state.birthProfileId, selectedCardIds);
+  }, [state.question, state.questionCategory, state.birthProfileId, createReading]);
 
   const revealCard = (index: number) => {
     setState((s) => {
@@ -488,7 +511,70 @@ export default function ReadingPage() {
                     </motion.div>
                   )}
 
-                  {/* Step 3: Card drawing */}
+                  {/* Step 3: Stellar Field — interactive card selection */}
+                  {state.step === "stellar" && (
+                    <motion.div
+                      key="stellar"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 1.05 }}
+                      className="flex flex-col items-center gap-12 py-8"
+                    >
+                      <div className="text-center space-y-4">
+                        <h2 className="font-display text-4xl sm:text-5xl text-text">Das Energiefeld</h2>
+                        <p className="text-lg text-text-secondary max-w-xl mx-auto leading-relaxed">
+                          Gleite durch das kosmische Feld und wähle drei Resonanzpunkte.
+                          Jeder Punkt birgt eine Karte — vertraue deiner Intuition.
+                        </p>
+                      </div>
+
+                      {state.chart && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="w-full max-w-2xl mx-auto"
+                        >
+                          <Panel className="bg-surface-raised/30 border-gold/10 py-4 px-6 relative overflow-hidden">
+                            <div className="flex flex-wrap justify-center gap-6 items-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Sonne</span>
+                                <SymbolChip variant="gold" className="px-3 py-0.5">
+                                  {state.chart.planets.find(p => p.name === "Sonne")?.sign}
+                                </SymbolChip>
+                              </div>
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Mond</span>
+                                <SymbolChip variant="gold" className="px-3 py-0.5">
+                                  {state.chart.planets.find(p => p.name === "Mond")?.sign}
+                                </SymbolChip>
+                              </div>
+                              {state.chart.ascendant && (
+                                <div className="flex flex-col items-center gap-1">
+                                  <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Aszendent</span>
+                                  <SymbolChip variant="gold" className="px-3 py-0.5">
+                                    {state.chart.ascendant.sign}
+                                  </SymbolChip>
+                                </div>
+                              )}
+                            </div>
+                          </Panel>
+                        </motion.div>
+                      )}
+
+                      {state.shuffledDeck.length > 0 ? (
+                        <StellarField
+                          cardIds={state.shuffledDeck}
+                          onComplete={handleStellarComplete}
+                        />
+                      ) : (
+                        <div className="h-[400px] flex items-center justify-center">
+                          <RefreshCw className="w-12 h-12 text-gold/20 animate-spin" />
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* Step 4: Card reveal */}
                   {state.step === "drawing" && (
                     <motion.div
                       key="drawing"
@@ -498,13 +584,13 @@ export default function ReadingPage() {
                       className="flex flex-col items-center gap-16 py-8"
                     >
                       <div className="text-center space-y-4">
-                         <h2 className="font-display text-4xl sm:text-5xl text-text">Die Ziehung</h2>
+                         <h2 className="font-display text-4xl sm:text-5xl text-text">Materialisierung</h2>
                          <p className="text-xl text-text-secondary max-w-xl mx-auto leading-relaxed">
                            {state.cards.length === 0
-                             ? "Die Mechanik wählt deine Symbole..."
+                             ? "Deine Resonanzpunkte werden zu Karten..."
                              : allRevealed
-                               ? "Die Resonanz ist vollständig."
-                               : "Aktiviere die Karten durch Berührung."}
+                               ? "Die Konstellation ist vollständig."
+                               : "Berühre die Karten, um sie zu enthüllen."}
                          </p>
                       </div>
 
