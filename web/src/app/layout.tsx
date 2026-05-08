@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CelestialBackground } from "@/components/CelestialBackground";
+import { UserAuth } from "@/components/UserAuth";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
