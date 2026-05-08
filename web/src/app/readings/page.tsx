@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { getSessionToken } from "@/lib/session";
 import { Panel } from "@/components/Panel";
@@ -32,12 +32,17 @@ export default function ReadingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
+  const initialized = useRef(false);
+
   useEffect(() => {
+    if (initialized.current) return;
     const token = getSessionToken();
     if (!token) {
       setLoading(false);
+      initialized.current = true;
       return;
     }
+    initialized.current = true;
     fetch(`/api/readings?sessionToken=${encodeURIComponent(token)}`)
       .then((r) => {
         if (!r.ok) throw new Error(`Error: ${r.status}`);

@@ -15,8 +15,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let { birthDate, birthTime, birthCity, birthLat, birthLon, timezone, sessionToken } =
+    const { birthDate, birthTime, birthCity, timezone, sessionToken } =
       parsed.data;
+    let { birthLat, birthLon } = parsed.data;
 
     // Automatically geocode city if coordinates are missing
     if (birthCity && (birthLat == null || birthLon == null)) {

@@ -3,13 +3,25 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import TarotCard from "./TarotCard";
+import { Sparkles, Image as ImageIcon, Code } from "lucide-react";
+
+interface DrawnCard {
+  id: string;
+  name: string;
+  position: string;
+  upright: boolean;
+  element: string | null;
+  zodiacAssociation: string | null;
+}
 
 interface KineticTextProps {
   text: string;
+  cards?: DrawnCard[];
   className?: string;
 }
 
-export const KineticBlueprint = ({ text, className }: KineticTextProps) => {
+export const KineticBlueprint = ({ text, cards, className }: KineticTextProps) => {
   // Split text into sections based on the specified format (Einstieg, Kernthema, etc.)
   // If not formatted, split by double newlines
   const sections = text.includes("**") 
@@ -17,15 +29,15 @@ export const KineticBlueprint = ({ text, className }: KineticTextProps) => {
     : text.split(/\n\n+/);
 
   return (
-    <div className={cn("space-y-16 py-8", className)}>
+    <div className={cn("space-y-24 py-8", className)}>
       {sections.map((section, index) => (
-        <BlueprintSection key={index} content={section} index={index} />
+        <BlueprintSection key={index} content={section} index={index} cards={cards} />
       ))}
     </div>
   );
 };
 
-const BlueprintSection = ({ content, index }: { content: string; index: number }) => {
+const BlueprintSection = ({ content, index, cards }: { content: string; index: number; cards?: DrawnCard[] }) => {
   const [isRendered, setIsRendered] = useState(false);
 
   useEffect(() => {
@@ -41,6 +53,104 @@ const BlueprintSection = ({ content, index }: { content: string; index: number }
   const title = match ? match[1] : null;
   const body = match ? match[2] : content;
 
+  // Special handling for "Die Karten"
+  if (title === "Die Karten" && cards) {
+    const cardSegments = body.split(/\n(?=###)/);
+    return (
+      <div className="space-y-12">
+        <SectionHeader title={title} />
+        <div className="grid grid-cols-1 gap-16">
+          {cardSegments.map((segment, i) => {
+            const cardMatch = segment.match(/### (.*?) \((.*?)\)\n([\s\S]*)/);
+            if (!cardMatch) return <p key={i} className="text-text-secondary italic pl-8">{segment}</p>;
+            
+            const cardName = cardMatch[1].trim();
+            const orientation = cardMatch[2].trim();
+            const cardBody = cardMatch[3].trim();
+            
+            // Find the matching card in the props
+            const cardData = cards.find(c => 
+              c.name.toLowerCase().includes(cardName.toLowerCase()) || 
+              cardName.toLowerCase().includes(c.name.toLowerCase())
+            );
+
+            return (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="flex flex-col md:flex-row gap-12 pl-8"
+              >
+                <div className="flex-1 space-y-4">
+                  <h5 className="text-lg font-display text-gold font-medium italic">
+                    {cardName} ({orientation})
+                  </h5>
+                  <div className="text-text-secondary text-xl leading-relaxed font-serif italic border-l border-gold/10 pl-6">
+                    {cardBody}
+                  </div>
+                </div>
+                {cardData && (
+                  <div className="shrink-0 scale-90 origin-top md:origin-right">
+                    <TarotCard {...cardData} revealed={true} />
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Special handling for "Visuelle Signatur"
+  if (title === "Visuelle Signatur") {
+    const prompts = body.split("\n").filter(l => l.trim().startsWith("-"));
+    return (
+      <div className="space-y-12">
+        <SectionHeader title={title} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pl-8">
+          {prompts.map((promptLine, i) => {
+            const [label, prompt] = promptLine.replace("- ", "").split(": ");
+            return (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                className="group relative bg-surface-raised/30 border border-gold/10 rounded-2xl p-6 space-y-4 overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <ImageIcon className="w-12 h-12 text-gold" />
+                </div>
+                
+                <h6 className="text-[10px] font-mono text-gold/60 uppercase tracking-widest">{label}</h6>
+                
+                <div className="aspect-square rounded-xl border border-gold/5 bg-black/40 flex items-center justify-center relative overflow-hidden">
+                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(200,164,93,0.05),transparent)] animate-pulse" />
+                   <Sparkles className="w-8 h-8 text-gold/20" />
+                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[8px] font-mono text-gold/30 uppercase">
+                     Pending Generation
+                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-[9px] font-mono text-gold/40 uppercase">
+                    <Code className="w-3 h-3" />
+                    <span>Prompt</span>
+                  </div>
+                  <p className="text-[11px] text-text-muted font-mono leading-relaxed bg-black/20 p-3 rounded-lg border border-gold/5">
+                    {prompt}
+                  </p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -49,27 +159,10 @@ const BlueprintSection = ({ content, index }: { content: string; index: number }
       transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
       className="relative group"
     >
-      {/* Mechanical Sidebar Indicator */}
-      <div className="absolute -left-8 top-0 bottom-0 w-[1px] bg-gold/10 group-hover:bg-gold/30 transition-colors">
-        <motion.div 
-          initial={{ height: 0 }}
-          animate={{ height: "100%" }}
-          transition={{ duration: 2.5, ease: "easeInOut" }}
-          className="absolute top-0 left-0 w-full bg-gold/40" 
-        />
-        <div className="absolute top-0 -left-1 w-2 h-2 rounded-full border border-gold/40 bg-bg" />
-        <div className="absolute bottom-0 -left-1 w-2 h-2 rounded-full border border-gold/40 bg-bg" />
-      </div>
+      <Sidebar />
 
       <div className="pl-8 space-y-6">
-        {title && (
-          <div className="flex items-center gap-6">
-            <h4 className="text-[11px] font-mono text-gold uppercase tracking-[0.4em] font-bold">
-              {title}
-            </h4>
-            <div className="h-[0.5px] flex-1 bg-gradient-to-r from-gold/30 to-transparent" />
-          </div>
-        )}
+        {title && <SectionHeader title={title} showLine={true} />}
         
         <div className="relative">
           <motion.div
@@ -95,16 +188,42 @@ const BlueprintSection = ({ content, index }: { content: string; index: number }
             })}
           </motion.div>
 
-          {/* Blueprint Line Animation on appear */}
-          <motion.div
-            initial={{ width: 0 }}
-            whileInView={{ width: "100%" }}
-            viewport={{ once: true }}
-            transition={{ duration: 1.5, delay: 0.4 }}
-            className="absolute -bottom-4 left-0 h-[0.5px] bg-gradient-to-r from-gold/20 via-gold/10 to-transparent"
-          />
+          <BottomLine />
         </div>
       </div>
     </motion.div>
   );
 };
+
+const SectionHeader = ({ title, showLine = false }: { title: string; showLine?: boolean }) => (
+  <div className="flex items-center gap-6">
+    <h4 className="text-[11px] font-mono text-gold uppercase tracking-[0.4em] font-bold">
+      {title}
+    </h4>
+    {showLine && <div className="h-[0.5px] flex-1 bg-gradient-to-r from-gold/30 to-transparent" />}
+  </div>
+);
+
+const Sidebar = () => (
+  <div className="absolute -left-8 top-0 bottom-0 w-[1px] bg-gold/10 group-hover:bg-gold/30 transition-colors">
+    <motion.div 
+      initial={{ height: 0 }}
+      animate={{ height: "100%" }}
+      transition={{ duration: 2.5, ease: "easeInOut" }}
+      className="absolute top-0 left-0 w-full bg-gold/40" 
+    />
+    <div className="absolute top-0 -left-1 w-2 h-2 rounded-full border border-gold/40 bg-bg" />
+    <div className="absolute bottom-0 -left-1 w-2 h-2 rounded-full border border-gold/40 bg-bg" />
+  </div>
+);
+
+const BottomLine = () => (
+  <motion.div
+    initial={{ width: 0 }}
+    whileInView={{ width: "100%" }}
+    viewport={{ once: true }}
+    transition={{ duration: 1.5, delay: 0.4 }}
+    className="absolute -bottom-4 left-0 h-[0.5px] bg-gradient-to-r from-gold/20 via-gold/10 to-transparent"
+  />
+);
+

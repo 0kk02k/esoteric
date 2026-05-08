@@ -8,9 +8,11 @@ ESO soll wie ein hochwertiges digitales Grimoire wirken: dunkel, editorial, myst
 
 ## Designrichtung
 
-### Name
+### Name / Titel
 
-`The Digital Grimoire`
+- **Haupttitel:** Kybernetisches Grimoire
+- **Alternativer Titel:** Systeme der Selbsterkenntnis
+- **Design-Arbeitstitel:** `The Digital Grimoire`
 
 ### Kurzbeschreibung
 

@@ -134,7 +134,7 @@ export default function TestPage() {
               <div className="space-y-4">
                  <div className="p-4 rounded-lg bg-surface-raised/40 border border-gold/5 space-y-2">
                     <p className="text-[10px] text-gold/40 uppercase font-mono tracking-widest">Frage</p>
-                    <p className="text-sm text-text italic">"{TEST_QUESTION}"</p>
+                    <p className="text-sm text-text italic">&quot;{TEST_QUESTION}&quot;</p>
                  </div>
                  
                  <div className="p-4 rounded-lg bg-surface-raised/40 border border-gold/5 space-y-3">

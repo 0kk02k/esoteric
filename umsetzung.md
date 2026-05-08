@@ -963,6 +963,8 @@ Nach jeder abgeschlossenen Stufe muessen mindestens diese Bereiche geprueft werd
 | 2026-05-07 | 3 | Astrologie-Service v3.0: swisseph-wasm + Fallback | Produktionsnah mit Houses (Placidus), Transiten, Caching, Versionierung, Unsicherheitslogik |
 | 2026-05-07 | 3 | 49 Tests fuer Astrologie-Service (vitest) | Carl Jung, Einstein, Reproduzierbarkeit, Edge Cases, Caching |
 | 2026-05-07 | 3 | Client/Server-Split: Astrologie + KI ueber API Routes | swisseph-wasm (WASM) kann nicht ins Client-Bundle |
+| 2026-05-08 | 5 | Geburtsdaten-Effekt verbessert: Erklärung + Radix-Signatur | Nutzerführung optimiert, Mehrwert verdeutlicht, Chart-Summary über Ziehung |
+| 2026-05-08 | 4 | KI-Prompt Version 1.1: Analytische Synthese | Bedeutung pro Karte isoliert, dann Synthese mit Astrologie, kein AI-Slob |
 
 ---
 

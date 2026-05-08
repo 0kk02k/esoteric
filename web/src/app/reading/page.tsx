@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import StepIndicator from "@/components/StepIndicator";
 import TarotCard from "@/components/TarotCard";
 import FeedbackForm from "@/components/FeedbackForm";
+import SymbolChip from "@/components/SymbolChip";
 import { Panel } from "@/components/Panel";
 import { Button } from "@/components/Button";
 import { KineticBlueprint } from "@/components/KineticBlueprint";
 import { Sparkles, ArrowLeft, RefreshCw, X, Info, LayoutGrid, MessageSquare } from "lucide-react";
 import type { ReadingResponse } from "@/lib/ai";
+import type { ChartResponse } from "@/lib/astrology";
 import { getOrCreateSessionToken } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +37,7 @@ type ReadingState = {
   includeBirth: boolean;
   birthProfileId: string | null;
   readingId: string | null;
+  chart: ChartResponse | null;
   cards: DrawnCard[];
   revealed: boolean[];
   result: ReadingResponse | null;
@@ -56,6 +59,7 @@ const INITIAL_STATE: ReadingState = {
   includeBirth: false,
   birthProfileId: null,
   readingId: null,
+  chart: null,
   cards: [],
   revealed: [false, false, false],
   result: null,
@@ -78,9 +82,13 @@ const CATEGORIES = [
 export default function ReadingPage() {
   const [state, setState] = useState<ReadingState>(INITIAL_STATE);
 
+  const tokenInitialized = useRef(false);
+
   useEffect(() => {
+    if (tokenInitialized.current) return;
     const token = getOrCreateSessionToken();
     setState((s) => ({ ...s, sessionToken: token }));
+    tokenInitialized.current = true;
   }, []);
 
   const submitQuestion = () => {
@@ -109,7 +117,11 @@ export default function ReadingPage() {
         throw new Error(err.error || `Reading error: ${res.status}`);
       }
       const reading = await res.json();
-      const cards: DrawnCard[] = reading.tarotDraws.map((d: any) => ({
+      const cards: DrawnCard[] = reading.tarotDraws.map((d: {
+        card: { id: string; name: string; element: string | null; zodiacAssociation: string | null };
+        position: string;
+        upright: boolean;
+      }) => ({
         id: d.card.id,
         name: d.card.name,
         position: d.position,
@@ -145,7 +157,31 @@ export default function ReadingPage() {
       });
       if (!bpRes.ok) throw new Error(`Birth profile error: ${bpRes.status}`);
       const bp = await bpRes.json();
-      setState((s) => ({ ...s, birthProfileId: bp.id, step: "drawing" }));
+
+      // Calculate chart
+      const bd = new Date(state.birthDate);
+      const chartRes = await fetch("/api/astrology/chart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          year: bd.getFullYear(),
+          month: bd.getMonth() + 1,
+          day: bd.getDate(),
+          hour: state.birthTime ? parseInt(state.birthTime.split(":")[0]) : 12,
+          minute: state.birthTime ? parseInt(state.birthTime.split(":")[1]) : 0,
+          latitude: bp.birthLat,
+          longitude: bp.birthLon,
+          timezoneOffset: -(bd.getTimezoneOffset() / 60),
+          timeUnknown: !state.birthTime,
+        }),
+      });
+
+      let chartData: ChartResponse | null = null;
+      if (chartRes.ok) {
+        chartData = await chartRes.json();
+      }
+      
+      setState((s) => ({ ...s, birthProfileId: bp.id, chart: chartData, step: "drawing" }));
       createReading(state.question, state.questionCategory, bp.id);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -343,9 +379,17 @@ export default function ReadingPage() {
                            <h2 className="font-display text-3xl sm:text-4xl text-text">Himmelsmechanik</h2>
                         </div>
                         
-                        <p className="text-xl text-text-secondary leading-relaxed mb-10 max-w-2xl">
+                        <p className="text-xl text-text-secondary leading-relaxed mb-6 max-w-2xl">
                           Möchtest du dein persönliches Geburtshoroskop als zusätzliche Symbolschicht in die Deutung einfließen lassen?
                         </p>
+
+                        <div className="bg-gold/5 border border-gold/10 rounded-2xl p-6 mb-10">
+                          <h3 className="text-xs font-mono text-gold uppercase tracking-widest mb-3">Warum Geburtsdaten?</h3>
+                          <p className="text-sm text-text-secondary leading-relaxed">
+                            Das Geburtsdatum ermöglicht es, die kosmische Signatur des Augenblicks deiner Geburt mit der Symbolik der Karten zu verweben. 
+                            So entsteht ein tiefgehenderes, auf dich persönlich zugeschnittenes Spiegelbild deiner aktuellen Situation und deiner inneren Zeitqualität.
+                          </p>
+                        </div>
 
                         <label className="group flex items-center gap-6 p-6 rounded-2xl border border-gold/10 hover:border-gold/30 hover:bg-gold/5 transition-all cursor-pointer mb-10 bg-surface-raised/20">
                           <div className={cn(
@@ -445,6 +489,48 @@ export default function ReadingPage() {
                          </p>
                       </div>
 
+                      {state.chart && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="w-full max-w-2xl mx-auto -mb-8"
+                        >
+                          <Panel className="bg-surface-raised/30 border-gold/10 py-6 px-8 relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(200,164,93,0.03),transparent)] pointer-events-none" />
+                            
+                            <div className="flex flex-col items-center gap-4 relative z-10">
+                               <div className="flex flex-col items-center gap-2 mb-2">
+                                  <span className="text-[10px] font-mono text-gold/60 uppercase tracking-[0.3em]">Radix-Signatur</span>
+                                  <div className="w-12 h-[1px] bg-gold/20" />
+                               </div>
+
+                               <div className="flex flex-wrap justify-center gap-8 items-center">
+                                  <div className="flex flex-col items-center gap-2">
+                                    <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Sonne</span>
+                                    <SymbolChip variant="gold" className="px-4 py-1">
+                                      {state.chart.planets.find(p => p.name === "Sonne")?.sign}
+                                    </SymbolChip>
+                                  </div>
+                                  <div className="flex flex-col items-center gap-2">
+                                    <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Mond</span>
+                                    <SymbolChip variant="gold" className="px-4 py-1">
+                                      {state.chart.planets.find(p => p.name === "Mond")?.sign}
+                                    </SymbolChip>
+                                  </div>
+                                  {state.chart.ascendant && (
+                                    <div className="flex flex-col items-center gap-2">
+                                      <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Aszendent</span>
+                                      <SymbolChip variant="gold" className="px-4 py-1">
+                                        {state.chart.ascendant.sign}
+                                      </SymbolChip>
+                                    </div>
+                                  )}
+                               </div>
+                            </div>
+                          </Panel>
+                        </motion.div>
+                      )}
+
                       <div className="relative w-full flex justify-center py-12">
                         {/* Visual Connector Lines (Kinetic) */}
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-gold/10 to-transparent z-0" />
@@ -541,7 +627,7 @@ export default function ReadingPage() {
                         </div>
                         
                         {state.result ? (
-                          <KineticBlueprint text={state.result.text} />
+                          <KineticBlueprint text={state.result.text} cards={state.cards} />
                         ) : (
                           <Panel className="border-danger-muted/30 py-12 text-center">
                              <p className="text-danger-muted font-serif italic text-lg mb-6">
