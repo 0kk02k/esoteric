@@ -269,12 +269,9 @@ export default function ReadingPage() {
       <div className="mx-auto max-w-7xl flex flex-col gap-12 relative z-10">
         
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-gold/10 pb-8">
-          <div className="flex flex-col gap-2">
-             <h2 className="text-[10px] font-mono text-gold/60 uppercase tracking-[0.3em]">KI-Grimoire</h2>
-             <h1 className="text-3xl sm:text-5xl font-display font-medium text-text">KI-Grimoire</h1>
-             <div className="mt-4">
-               <StepIndicator current={state.step} />
-             </div>
+          <div className="flex flex-col gap-3">
+             <span className="text-xs font-mono text-gold/60 uppercase tracking-[0.3em]">KI-Grimoire</span>
+             <StepIndicator current={state.step} />
           </div>
           
           <div className="flex flex-col items-end gap-6">
