@@ -3,8 +3,14 @@ import prisma from "@/lib/db";
 const DAILY_FREE_LIMIT = 3;
 
 export async function checkUsageLimit(
-  sessionToken: string
+  identifier: { userId?: string; sessionToken?: string }
 ): Promise<{ allowed: boolean; readingsRemaining: number }> {
+  const { userId, sessionToken } = identifier;
+  
+  if (!userId && !sessionToken) {
+    return { allowed: true, readingsRemaining: DAILY_FREE_LIMIT };
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -12,18 +18,20 @@ export async function checkUsageLimit(
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   // Find or create usage record for today
+  // Priority: userId, then sessionToken (only if no userId)
+  const where = userId 
+    ? { userId, periodStart: today, periodEnd: tomorrow } 
+    : { sessionToken: sessionToken!, userId: null, periodStart: today, periodEnd: tomorrow };
+
   let usageLimit = await prisma.usageLimit.findFirst({
-    where: {
-      sessionToken,
-      periodStart: today,
-      periodEnd: tomorrow,
-    },
+    where,
   });
 
   if (!usageLimit) {
     usageLimit = await prisma.usageLimit.create({
       data: {
-        sessionToken,
+        userId,
+        sessionToken: userId ? null : (sessionToken ?? null),
         periodStart: today,
         periodEnd: tomorrow,
         readingsCount: 0,

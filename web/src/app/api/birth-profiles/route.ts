@@ -2,8 +2,33 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { createBirthProfileSchema } from "@/lib/validation";
 import { geocodeCity } from "@/lib/geocoding";
+import { auth } from "@/auth";
+
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const profile = await prisma.birthProfile.findFirst({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json(profile);
+  } catch (error) {
+    console.error("Error fetching birth profile:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch birth profile" },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  const userId = session?.user?.id;
+
   try {
     const body = await request.json();
     const parsed = createBirthProfileSchema.safeParse(body);
@@ -30,13 +55,14 @@ export async function POST(request: NextRequest) {
 
     const profile = await prisma.birthProfile.create({
       data: {
+        userId,
+        sessionToken: userId ? undefined : sessionToken,
         birthDate: new Date(birthDate),
-        birthTime: birthTime ?? null,
-        birthCity: birthCity ?? null,
-        birthLat: birthLat ?? null,
-        birthLon: birthLon ?? null,
-        timezone: timezone ?? null,
-        sessionToken: sessionToken ?? null,
+        birthTime,
+        birthCity,
+        birthLat,
+        birthLon,
+        timezone,
       },
     });
 
@@ -49,3 +75,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

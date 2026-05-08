@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import TarotCard from "./TarotCard";
-import { Sparkles, Image as ImageIcon, Code } from "lucide-react";
+import SymbolChip from "./SymbolChip";
 
 interface DrawnCard {
   id: string;
@@ -83,9 +83,16 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
                 className="flex flex-col md:flex-row gap-12 pl-8"
               >
                 <div className="flex-1 space-y-4">
-                  <h5 className="text-lg font-display text-gold font-medium italic">
-                    {cardName} ({orientation})
-                  </h5>
+                  <div className="flex items-center justify-between gap-4">
+                    <h5 className="text-lg font-display text-gold font-medium italic">
+                      {cardName} ({orientation})
+                    </h5>
+                    {cardData?.element && (
+                      <SymbolChip variant="violet" className="opacity-80">
+                        {cardData.element}
+                      </SymbolChip>
+                    )}
+                  </div>
                   <div className="text-text-secondary text-xl leading-relaxed font-serif italic border-l border-gold/10 pl-6">
                     {cardBody}
                   </div>
@@ -95,54 +102,6 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
                     <TarotCard {...cardData} revealed={true} />
                   </div>
                 )}
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // Special handling for "Visuelle Signatur"
-  if (title === "Visuelle Signatur") {
-    const prompts = body.split("\n").filter(l => l.trim().startsWith("-"));
-    return (
-      <div className="space-y-12">
-        <SectionHeader title={title} />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pl-8">
-          {prompts.map((promptLine, i) => {
-            const [label, prompt] = promptLine.replace("- ", "").split(": ");
-            return (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                className="group relative bg-surface-raised/30 border border-gold/10 rounded-2xl p-6 space-y-4 overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <ImageIcon className="w-12 h-12 text-gold" />
-                </div>
-                
-                <h6 className="text-[10px] font-mono text-gold/60 uppercase tracking-widest">{label}</h6>
-                
-                <div className="aspect-square rounded-xl border border-gold/5 bg-black/40 flex items-center justify-center relative overflow-hidden">
-                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(200,164,93,0.05),transparent)] animate-pulse" />
-                   <Sparkles className="w-8 h-8 text-gold/20" />
-                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[8px] font-mono text-gold/30 uppercase">
-                     Pending Generation
-                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-[9px] font-mono text-gold/40 uppercase">
-                    <Code className="w-3 h-3" />
-                    <span>Prompt</span>
-                  </div>
-                  <p className="text-[11px] text-text-muted font-mono leading-relaxed bg-black/20 p-3 rounded-lg border border-gold/5">
-                    {prompt}
-                  </p>
-                </div>
               </motion.div>
             );
           })}

@@ -38,7 +38,10 @@ export default function ReadingsPage() {
     if (initialized.current) return;
     const token = getSessionToken();
     if (!token) {
-      setLoading(false);
+      setLoading((prev) => {
+        if (!prev) return prev;
+        return false;
+      });
       initialized.current = true;
       return;
     }

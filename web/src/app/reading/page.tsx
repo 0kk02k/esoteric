@@ -7,6 +7,7 @@ import StepIndicator from "@/components/StepIndicator";
 import TarotCard from "@/components/TarotCard";
 import FeedbackForm from "@/components/FeedbackForm";
 import SymbolChip from "@/components/SymbolChip";
+import UserAuth from "@/components/UserAuth";
 import { Panel } from "@/components/Panel";
 import { Button } from "@/components/Button";
 import { KineticBlueprint } from "@/components/KineticBlueprint";
@@ -89,6 +90,26 @@ export default function ReadingPage() {
     const token = getOrCreateSessionToken();
     setState((s) => ({ ...s, sessionToken: token }));
     tokenInitialized.current = true;
+
+    // Fetch latest birth profile for user if logged in
+    fetch("/api/birth-profiles")
+      .then(res => {
+        if (res.ok) return res.json();
+        return null;
+      })
+      .then(profile => {
+        if (profile) {
+          setState(s => ({
+            ...s,
+            birthDate: profile.birthDate ? new Date(profile.birthDate).toISOString().split('T')[0] : "",
+            birthTime: profile.birthTime || "",
+            birthCity: profile.birthCity || "",
+            includeBirth: true,
+            birthProfileId: profile.id
+          }));
+        }
+      })
+      .catch(err => console.error("Error loading birth profile:", err));
   }, []);
 
   const submitQuestion = () => {
@@ -257,18 +278,21 @@ export default function ReadingPage() {
              </div>
           </div>
           
-          <div className="flex items-center gap-6">
-             <div className="hidden lg:flex items-center gap-2 text-[10px] font-mono text-text-muted uppercase tracking-widest">
-                <span className="w-2 h-2 rounded-full bg-success-muted animate-pulse" />
-                Stream Aktiv
+          <div className="flex flex-col items-end gap-6">
+             <UserAuth />
+             <div className="flex items-center gap-6">
+                <div className="hidden lg:flex items-center gap-2 text-[10px] font-mono text-text-muted uppercase tracking-widest">
+                   <span className="w-2 h-2 rounded-full bg-success-muted animate-pulse" />
+                   Stream Aktiv
+                </div>
+                <Link
+                   href="/"
+                   className="group flex items-center gap-2 text-sm text-text-muted hover:text-gold transition-colors"
+                 >
+                   <X className="w-4 h-4" />
+                   <span>Abbrechen</span>
+                 </Link>
              </div>
-             <Link
-                href="/"
-                className="group flex items-center gap-2 text-sm text-text-muted hover:text-gold transition-colors"
-              >
-                <X className="w-4 h-4" />
-                <span>Abbrechen</span>
-              </Link>
           </div>
         </header>
 
@@ -296,7 +320,7 @@ export default function ReadingPage() {
                 key="main-content-area"
                 className={cn(
                   "lg:col-span-12 transition-all duration-700",
-                  state.step === "result" ? "lg:col-span-8" : "lg:col-span-8 lg:col-start-3"
+                  state.step === "result" ? "lg:col-span-12" : "lg:col-span-8 lg:col-start-3"
                 )}
              >
                 <AnimatePresence mode="wait">
@@ -693,66 +717,31 @@ export default function ReadingPage() {
                            )}
                         </div>
                       )}
+
+                      {/* Footer Section: Feedback & New Ritual */}
+                      <div className="pt-32 border-t-2 border-gold/20 flex flex-col items-center gap-16">
+                         <div className="w-full max-w-2xl">
+                            <h3 className="text-xs font-mono text-gold/60 uppercase tracking-[0.3em] mb-10 text-center">Ritual-Resonanz</h3>
+                            <Panel className="bg-surface-raised/20">
+                               <FeedbackForm readingId={state.readingId!} />
+                            </Panel>
+                         </div>
+
+                         <div className="flex flex-col items-center gap-8 w-full max-w-sm">
+                            <Button onClick={() => setState(INITIAL_STATE)} className="w-full h-16 text-lg shadow-[0_0_30px_rgba(200,164,93,0.1)]">
+                               Neues Ritual beginnen
+                            </Button>
+                            
+                            <div className="flex justify-center gap-12 w-full">
+                               <Link href="/readings" className="text-[10px] font-mono text-text-muted hover:text-gold uppercase tracking-[0.2em] transition-colors">Archiv</Link>
+                               <Link href="/" className="text-[10px] font-mono text-text-muted hover:text-gold uppercase tracking-[0.2em] transition-colors">Home</Link>
+                            </div>
+                         </div>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
              </div>
-
-             {/* Right Sidebar (only in result step) */}
-             <AnimatePresence>
-               {state.step === "result" && (
-                 <motion.aside
-                    key="sidebar"
-                    initial={{ opacity: 0, x: 40 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 40 }}
-                    className="lg:col-span-4 space-y-8"
-                 >
-                    <Panel className="bg-surface/20">
-                       <h3 className="text-xs font-mono text-gold/60 uppercase tracking-[0.2em] mb-8">Symbol-Inventar</h3>
-                       <div className="flex flex-col gap-8">
-                          {state.cards.map((card, i) => (
-                             <div key={i} className="flex items-center gap-6 group">
-                                <div className="w-16 h-24 shrink-0 border border-gold/20 rounded-lg overflow-hidden relative grayscale hover:grayscale-0 transition-all duration-500">
-                                   <div className="absolute inset-0 bg-gold/5" />
-                                   <div className="absolute inset-0 flex items-center justify-center">
-                                      <Sparkles className="w-6 h-6 text-gold/20" />
-                                   </div>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                   <span className="text-[10px] font-mono text-gold/40 uppercase">{card.position}</span>
-                                   <h4 className="text-lg font-display text-text group-hover:text-gold transition-colors">{card.name}</h4>
-                                   <div className="flex gap-2 mt-1">
-                                      {card.element && (
-                                         <span className="text-[9px] font-mono text-violet px-2 py-0.5 rounded bg-violet-deep/20 border border-violet/10">{card.element}</span>
-                                      )}
-                                      {card.zodiacAssociation && (
-                                         <span className="text-[9px] font-mono text-gold px-2 py-0.5 rounded bg-gold/5 border border-gold/10">{card.zodiacAssociation}</span>
-                                      )}
-                                   </div>
-                                </div>
-                             </div>
-                          ))}
-                       </div>
-                    </Panel>
-
-                    <Panel className="bg-bg/40">
-                       <h3 className="text-xs font-mono text-gold/60 uppercase tracking-[0.2em] mb-6">Resonanz</h3>
-                       <FeedbackForm readingId={state.readingId!} />
-                    </Panel>
-
-                    <div className="flex flex-col gap-4">
-                       <Button onClick={() => setState(INITIAL_STATE)} className="w-full h-14">
-                          Neues Ritual
-                       </Button>
-                       <div className="flex justify-between px-2">
-                          <Link href="/readings" className="text-[10px] font-mono text-text-muted hover:text-gold uppercase tracking-widest transition-colors">Archiv</Link>
-                          <Link href="/" className="text-[10px] font-mono text-text-muted hover:text-gold uppercase tracking-widest transition-colors">Home</Link>
-                       </div>
-                    </div>
-                 </motion.aside>
-               )}
-             </AnimatePresence>
            </AnimatePresence>
         </main>
       </div>

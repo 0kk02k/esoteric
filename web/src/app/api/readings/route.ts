@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { createReadingSchema } from "@/lib/validation";
 import { checkUsageLimit } from "@/lib/usage-limits";
+import { auth } from "@/auth";
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  const userId = session?.user?.id;
+
   try {
     const body = await request.json();
     const parsed = createReadingSchema.safeParse(body);
@@ -18,18 +22,18 @@ export async function POST(request: NextRequest) {
     const { question, birthProfileId, questionCategory, sessionToken } =
       parsed.data;
 
-    // Check usage limits if sessionToken provided
-    if (sessionToken) {
-      const { allowed, readingsRemaining } = await checkUsageLimit(sessionToken);
-      if (!allowed) {
-        return NextResponse.json(
-          {
-            error: "Daily reading limit reached",
-            readingsRemaining,
-          },
-          { status: 429 }
-        );
-      }
+    const identifier = userId ? { userId } : { sessionToken: sessionToken || undefined };
+
+    // Check usage limits
+    const { allowed, readingsRemaining } = await checkUsageLimit(identifier);
+    if (!allowed) {
+      return NextResponse.json(
+        {
+          error: "Daily reading limit reached",
+          readingsRemaining,
+        },
+        { status: 429 }
+      );
     }
 
     // Draw 3 random tarot cards
@@ -65,10 +69,11 @@ export async function POST(request: NextRequest) {
     // Create reading with tarot draws
     const reading = await prisma.reading.create({
       data: {
+        userId,
         question,
         questionCategory: questionCategory ?? null,
         birthProfileId: birthProfileId ?? null,
-        sessionToken: sessionToken ?? null,
+        sessionToken: userId ? null : (sessionToken ?? null),
         status: "pending",
         tarotDraws: {
           create: drawnCards.map((card: { id: string } | null, i: number) => ({
@@ -87,25 +92,23 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Increment usage count if sessionToken
-    if (sessionToken) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+    // Increment usage count
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      await prisma.usageLimit.updateMany({
-        where: {
-          sessionToken,
-          periodStart: today,
-          periodEnd: tomorrow,
-        },
-        data: {
-          readingsCount: { increment: 1 },
-        },
-      });
-    }
+    await prisma.usageLimit.updateMany({
+      where: {
+        userId,
+        sessionToken: userId ? null : (sessionToken ?? undefined),
+        periodStart: today,
+        periodEnd: tomorrow,
+      },
+      data: {
+        readingsCount: { increment: 1 },
+      },
+    });
 
     return NextResponse.json(reading, { status: 201 });
   } catch (error) {
@@ -118,19 +121,23 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const session = await auth();
+  const userIdFromAuth = session?.user?.id;
+
   try {
     const { searchParams } = new URL(request.url);
     const sessionToken = searchParams.get("sessionToken");
-    const userId = searchParams.get("userId");
 
-    if (!sessionToken && !userId) {
+    if (!userIdFromAuth && !sessionToken) {
       return NextResponse.json(
-        { error: "Provide sessionToken or userId" },
+        { error: "Provide sessionToken or sign in" },
         { status: 400 }
       );
     }
 
-    const where = userId ? { userId } : { sessionToken: sessionToken! };
+    const where = userIdFromAuth 
+      ? { userId: userIdFromAuth } 
+      : { sessionToken: sessionToken!, userId: null };
 
     const readings = await prisma.reading.findMany({
       where,
