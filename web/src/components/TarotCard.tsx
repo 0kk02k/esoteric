@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
@@ -30,6 +31,11 @@ export default function TarotCard({
   onReveal,
 }: TarotCardProps) {
   const positionLabel = POSITION_LABELS[position] ?? position;
+  
+  // Format the name exactly like the python script to find the generated image
+  const cleanImageName = name.replace(/ /g, "_").replace(/–/g, "").replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").toLowerCase() + ".png";
+  const imagePath = `/tarot/cards/${cleanImageName}`;
+  const [imageError, setImageError] = useState(false);
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -91,17 +97,27 @@ export default function TarotCard({
               <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-gold/30 to-transparent my-2" />
             </div>
 
-            <div className="flex flex-col items-center gap-4">
-               {/* Card Image Placeholder / Symbol */}
-               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-gold/20 flex items-center justify-center relative">
-                  <Sparkles className="w-8 h-8 text-gold/40" />
-                  {/* Rotating orbital */}
-                  <div className="absolute inset-0 animate-[spin_10s_linear_infinite]">
-                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gold/60" />
-                  </div>
-               </div>
+            <div className="flex flex-col items-center gap-4 flex-1 justify-center w-full relative">
+               {!imageError ? (
+                 <div className="absolute inset-0 top-[-20px] bottom-[-20px] left-[-10px] right-[-10px] overflow-hidden rounded-md opacity-90 mix-blend-luminosity">
+                    <img 
+                      src={imagePath} 
+                      alt={name} 
+                      className="w-full h-full object-cover"
+                      onError={() => setImageError(true)}
+                    />
+                 </div>
+               ) : (
+                 <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-gold/20 flex items-center justify-center relative z-10">
+                    <Sparkles className="w-8 h-8 text-gold/40" />
+                    {/* Rotating orbital */}
+                    <div className="absolute inset-0 animate-[spin_10s_linear_infinite]">
+                       <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gold/60" />
+                    </div>
+                 </div>
+               )}
                
-               <h3 className="text-sm sm:text-base font-display font-medium text-text leading-tight px-1">
+               <h3 className="text-sm sm:text-base font-display font-medium text-text leading-tight px-1 z-10 bg-surface/80 p-1 rounded-sm mt-auto">
                  {name}
                </h3>
             </div>
