@@ -12,8 +12,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
     }),
     Nodemailer({
-      server: process.env.EMAIL_SERVER,
-      from: process.env.EMAIL_FROM,
+      server: process.env.EMAIL_SERVER || "smtp://dummy:dummy@localhost:587",
+      from: process.env.EMAIL_FROM || "dummy@example.com",
     }),
   ],
   pages: {
