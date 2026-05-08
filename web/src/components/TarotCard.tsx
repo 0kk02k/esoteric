@@ -123,7 +123,7 @@ export default function TarotCard({
 
             <div className="flex flex-col items-center gap-4 flex-1 justify-center w-full relative">
                {!imageError ? (
-                 <div className="absolute inset-0 top-[-20px] bottom-[-20px] left-[-10px] right-[-10px] overflow-hidden rounded-md opacity-90 mix-blend-luminosity">
+                 <div className="absolute inset-0 top-[-20px] bottom-[-20px] left-[-10px] right-[-10px] overflow-hidden rounded-md opacity-80">
                     <img 
                       src={imagePath} 
                       alt={name} 
