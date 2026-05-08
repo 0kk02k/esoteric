@@ -9,6 +9,7 @@ import SymbolChip from "@/components/SymbolChip";
 import { Panel } from "@/components/Panel";
 import { Button } from "@/components/Button";
 import { ArrowLeft, Play, Database, FileCode } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const TEST_BIRTH = new Date(1990, 2, 15, 14, 30);
 const TEST_LAT = 47.3769;

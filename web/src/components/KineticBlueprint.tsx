@@ -37,7 +37,7 @@ const BlueprintSection = ({ content, index }: { content: string; index: number }
   if (!isRendered) return null;
 
   // Extract title if it's in **Title** format
-  const match = content.match(/^\s*\*\*(.*?)\*\*\s*:?\s*(.*)/s);
+  const match = content.match(/^\s*\*\*([\s\S]*?)\*\*\s*:?\s*([\s\S]*)/);
   const title = match ? match[1] : null;
   const body = match ? match[2] : content;
 
