@@ -108,69 +108,50 @@ export default function TarotCard({
           </div>
 
           {/* Card Front (Symbolic) */}
-          <div className="absolute inset-0 backface-hidden rounded-[var(--radius-tarot)] border border-gold/50 bg-surface p-4 flex flex-col items-center justify-between text-center rotate-y-180">
-            <div className="flex flex-col items-center gap-2">
-              <span className={cn(
-                "text-[9px] font-mono tracking-widest uppercase",
-                upright ? "text-success-muted/80" : "text-danger-muted/80"
-              )}>
-                {!upright && "△ "}
-                {upright ? "aufrecht" : "umgekehrt"}
-              </span>
-              
-              <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-gold/30 to-transparent my-2" />
-            </div>
+          <div className="absolute inset-0 backface-hidden rounded-[var(--radius-tarot)] border border-gold/50 bg-surface flex flex-col items-center justify-between overflow-hidden rotate-y-180">
+            {/* Full-bleed image */}
+            {!imageError ? (
+              <img
+                src={imagePath}
+                alt={name}
+                className="absolute inset-0 w-full h-full object-cover opacity-80"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-gold/20 flex items-center justify-center">
+                  <Sparkles className="w-8 h-8 text-gold/40" />
+                </div>
+              </div>
+            )}
 
-            <div className="flex flex-col items-center gap-4 flex-1 justify-center w-full relative">
-               {!imageError ? (
-                 <div className="absolute inset-0 top-[-20px] bottom-[-20px] left-[-10px] right-[-10px] overflow-hidden rounded-md opacity-80">
-                    <img 
-                      src={imagePath} 
-                      alt={name} 
-                      className="w-full h-full object-cover"
-                      onError={() => setImageError(true)}
-                    />
-                 </div>
-               ) : (
-                 <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-gold/20 flex items-center justify-center relative z-10">
-                    <Sparkles className="w-8 h-8 text-gold/40" />
-                    {/* Rotating orbital */}
-                    <div className="absolute inset-0 animate-[spin_10s_linear_infinite]">
-                       <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gold/60" />
-                    </div>
-                 </div>
-               )}
-               
-               <h3 className="text-sm sm:text-base font-display font-medium text-text leading-tight px-1 z-10 bg-surface/80 p-1 rounded-sm mt-auto">
-                 {name}
-               </h3>
-            </div>
-
-            <div className="w-full space-y-3">
-               <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
-               
-               <div className="flex flex-wrap gap-1.5 justify-center">
-                  <AnimatePresence>
-                    {element && (
-                      <motion.span 
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="text-[9px] font-mono text-violet bg-violet-deep/30 border border-violet/20 px-2 py-0.5 rounded-full"
-                      >
-                        {element}
-                      </motion.span>
-                    )}
-                    {zodiacAssociation && (
-                      <motion.span 
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="text-[9px] font-mono text-gold bg-gold/10 border border-gold/20 px-2 py-0.5 rounded-full"
-                      >
-                        {zodiacAssociation}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-               </div>
+            {/* Name overlay at bottom */}
+            <div className="relative z-10 mt-auto w-full bg-gradient-to-t from-surface via-surface/80 to-transparent pt-8 pb-2 px-2 text-center">
+              <h3 className="text-sm sm:text-base font-display font-medium text-text leading-tight">
+                {name}
+              </h3>
+              <div className="flex flex-wrap gap-1.5 justify-center mt-1">
+                <AnimatePresence>
+                  {element && (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-[9px] font-mono text-violet bg-violet-deep/30 border border-violet/20 px-2 py-0.5 rounded-full"
+                    >
+                      {element}
+                    </motion.span>
+                  )}
+                  {zodiacAssociation && (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-[9px] font-mono text-gold bg-gold/10 border border-gold/20 px-2 py-0.5 rounded-full"
+                    >
+                      {zodiacAssociation}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </motion.div>
