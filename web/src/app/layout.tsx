@@ -35,6 +35,9 @@ export default function RootLayout({
     <html lang="de" className={`${fraunces.variable} ${inter.variable} ${geistMono.variable}`}>
       <body className="antialiased min-h-screen flex flex-col selection:bg-gold/30 selection:text-gold">
         <CelestialBackground />
+        <div className="absolute top-0 right-0 p-4 sm:p-6 z-50">
+          <UserAuth />
+        </div>
         <main className="flex-1 flex flex-col relative z-10">
           {children}
         </main>
