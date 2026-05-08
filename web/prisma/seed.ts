@@ -420,6 +420,7 @@ export async function main(): Promise<void> {
 
   const result = await prisma.tarotCard.createMany({
     data: allCards,
+    skipDuplicates: true,
   });
 
   console.log(`Inserted ${result.count} cards (skipped existing duplicates)`);
