@@ -433,12 +433,14 @@ export async function main(): Promise<void> {
 // Execute when run directly
 // ---------------------------------------------------------------------------
 
-main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
-    console.error("Seed failed:", e);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+if (process.argv[1]?.endsWith("seed.ts")) {
+  main()
+    .then(async () => {
+      await prisma.$disconnect();
+    })
+    .catch(async (e) => {
+      console.error("Seed failed:", e);
+      await prisma.$disconnect();
+      process.exit(1);
+    });
+}
