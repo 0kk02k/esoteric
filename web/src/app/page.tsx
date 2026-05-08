@@ -46,8 +46,7 @@ export default function Home() {
           transition={{ delay: 0.5 }}
           className="text-4xl sm:text-7xl font-display font-semibold tracking-tight text-text leading-[1.1] max-w-3xl mb-6"
         >
-          Kybernetisches <br />
-          <span className="text-gold italic font-medium">Grimoire.</span>
+          <span className="text-gold italic font-medium">KI-Grimoire</span>
         </motion.h1>
 
         <motion.p 
@@ -56,7 +55,7 @@ export default function Home() {
           transition={{ delay: 0.8 }}
           className="text-lg sm:text-xl text-text-secondary leading-relaxed max-w-xl mb-12"
         >
-          Ein Cyber-Mystik-Erlebnis, das antike Astrologie mit modernster KI-Synthese verschmilzt.
+          Ein Cyber-Mystik-Erlebnis, das Astrologie und Tarot mit KI verschmilzt.
         </motion.p>
 
         <motion.div 
