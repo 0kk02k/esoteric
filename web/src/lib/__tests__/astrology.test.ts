@@ -23,7 +23,7 @@ const ZODIAC_ORDER = [
 ] as const;
 
 function signIndex(sign: string): number {
-  return ZODIAC_ORDER.indexOf(sign as any);
+  return ZODIAC_ORDER.indexOf(sign as typeof ZODIAC_ORDER[number]);
 }
 
 function makeRequest(overrides: Partial<NatalChartRequest> = {}): NatalChartRequest {
@@ -524,7 +524,7 @@ describe('Request validation', () => {
   });
 
   it('should catch missing timeUnknown', () => {
-    const errors = validateNatalChartRequest(makeRequest({ timeUnknown: undefined as any }));
+    const errors = validateNatalChartRequest(makeRequest({ timeUnknown: undefined as unknown as boolean }));
     expect(errors.some((e) => e.field === 'timeUnknown')).toBe(true);
   });
 });

@@ -36,16 +36,16 @@ export default function ReadingsPage() {
 
   useEffect(() => {
     if (initialized.current) return;
+    initialized.current = true;
+    
     const token = getSessionToken();
     if (!token) {
-      setLoading((prev) => {
-        if (!prev) return prev;
-        return false;
+      requestAnimationFrame(() => {
+        setLoading(false);
       });
-      initialized.current = true;
       return;
     }
-    initialized.current = true;
+    
     fetch(`/api/readings?sessionToken=${encodeURIComponent(token)}`)
       .then((r) => {
         if (!r.ok) throw new Error(`Error: ${r.status}`);

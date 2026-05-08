@@ -1,8 +1,36 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+
+type DustParticle = {
+  x: number;
+  y: number;
+  opacity: number;
+  animateY: number;
+  duration: number;
+  left: string;
+  top: string;
+};
 
 export const CelestialBackground = () => {
+  const [particles, setParticles] = useState<DustParticle[]>([]);
+
+  useEffect(() => {
+    const newParticles = [...Array(20)].map(() => ({
+      x: Math.random() * 2000 - 1000,
+      y: Math.random() * 2000 - 1000,
+      opacity: Math.random() * 0.3,
+      animateY: Math.random() * -100,
+      duration: 20 + Math.random() * 40,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+    }));
+    requestAnimationFrame(() => {
+      setParticles(newParticles);
+    });
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none bg-celestial">
       {/* Central Sun/Engine Hub */}
@@ -37,27 +65,27 @@ export const CelestialBackground = () => {
       </div>
 
       {/* Floating Geometric Dust */}
-      {[...Array(20)].map((_, i) => (
+      {particles.map((p, i) => (
         <motion.div
           key={i}
           initial={{ 
-            x: Math.random() * 2000 - 1000, 
-            y: Math.random() * 2000 - 1000,
-            opacity: Math.random() * 0.3
+            x: p.x, 
+            y: p.y,
+            opacity: p.opacity
           }}
           animate={{ 
-            y: [null, Math.random() * -100],
+            y: [null, p.animateY],
             rotate: [0, 360]
           }}
           transition={{ 
-            duration: 20 + Math.random() * 40, 
+            duration: p.duration, 
             repeat: Infinity, 
             ease: "linear" 
           }}
           className="absolute w-1 h-1 bg-gold/30 rounded-full"
           style={{ 
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%` 
+            left: p.left,
+            top: p.top 
           }}
         />
       ))}

@@ -1,4 +1,5 @@
-import { signIn, signOut, auth } from "@/auth";
+import { auth } from "@/auth";
+import { signInAction, signOutAction } from "@/app/actions";
 import { Button } from "./Button";
 import { User, LogOut } from "lucide-react";
 
@@ -18,12 +19,7 @@ export async function UserAuth() {
             {session.user.name || session.user.email?.split("@")[0]}
           </span>
         </div>
-        <form
-          action={async () => {
-            "use server";
-            await signOut();
-          }}
-        >
+        <form action={signOutAction}>
           <button type="submit" className="p-2 rounded-full hover:bg-danger-muted/10 text-text-muted hover:text-danger-muted transition-colors" title="Abmelden">
             <LogOut className="w-4 h-4" />
           </button>
@@ -33,12 +29,7 @@ export async function UserAuth() {
   }
 
   return (
-    <form
-      action={async () => {
-        "use server";
-        await signIn();
-      }}
-    >
+    <form action={signInAction}>
       <Button type="submit" variant="ghost" className="h-9 px-4 text-xs font-mono uppercase tracking-widest text-gold hover:bg-gold/10">
         Login
       </Button>

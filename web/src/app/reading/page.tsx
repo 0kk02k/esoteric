@@ -7,7 +7,6 @@ import StepIndicator from "@/components/StepIndicator";
 import TarotCard from "@/components/TarotCard";
 import FeedbackForm from "@/components/FeedbackForm";
 import SymbolChip from "@/components/SymbolChip";
-import UserAuth from "@/components/UserAuth";
 import { Panel } from "@/components/Panel";
 import { Button } from "@/components/Button";
 import { KineticBlueprint } from "@/components/KineticBlueprint";
@@ -279,7 +278,6 @@ export default function ReadingPage() {
           </div>
           
           <div className="flex flex-col items-end gap-6">
-             <UserAuth />
              <div className="flex items-center gap-6">
                 <div className="hidden lg:flex items-center gap-2 text-[10px] font-mono text-text-muted uppercase tracking-widest">
                    <span className="w-2 h-2 rounded-full bg-success-muted animate-pulse" />
