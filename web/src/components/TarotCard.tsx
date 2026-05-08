@@ -33,7 +33,8 @@ export default function TarotCard({
   const positionLabel = POSITION_LABELS[position] ?? position;
   
   // Format the name exactly like the python script to find the generated image
-  const cleanImageName = name.replace(/ /g, "_").replace(/–/g, "").replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").toLowerCase() + ".png";
+  const coreName = name.split("–")[0].trim();
+  const cleanImageName = coreName.replace(/ /g, "_").replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").toLowerCase() + ".png";
   const imagePath = `/tarot/cards/${cleanImageName}`;
   const [imageError, setImageError] = useState(false);
 
