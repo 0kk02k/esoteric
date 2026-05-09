@@ -44,8 +44,8 @@ export function CrystalShard({
 }: CrystalShardProps) {
   const isGold = variant === "gold";
 
-  const speed = synthesizing ? 1.5 : 2.5;
-  const orbitSpeed = synthesizing ? 2.0 : 4.0;
+  const speed = synthesizing ? 0.7 : 2.5;
+  const orbitSpeed = synthesizing ? 1.0 : 4.0;
 
   const colors = isGold
     ? {
@@ -152,41 +152,44 @@ export function CrystalShard({
       {/* Central binding glow */}
       <motion.div
         animate={{
-          opacity: synthesizing ? [0.4, 0.7, 0.4] : [0.25, 0.4, 0.25],
-          scale: synthesizing ? [0.97, 1.05, 0.97] : [0.99, 1.01, 0.99],
+          opacity: synthesizing ? [0.6, 0.9, 0.6] : [0.25, 0.4, 0.25],
+          scale: synthesizing ? [0.95, 1.15, 0.95] : [0.99, 1.01, 0.99],
         }}
-        transition={{ duration: 5 * speed, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 4 * speed, repeat: Infinity, ease: "easeInOut" }}
         className="absolute inset-[-5%] pointer-events-none"
         style={{
           background: `radial-gradient(ellipse 50% 65% at 50% 50%, ${colors.bindingCore}, ${colors.bindingEdge} 60%, transparent 85%)`,
-          filter: "blur(14px)",
+          filter: "blur(18px)",
         }}
       />
       {/* Tighter center glow */}
       <motion.div
         animate={{
-          opacity: synthesizing ? [0.4, 0.7, 0.4] : [0.15, 0.3, 0.15],
+          opacity: synthesizing ? [0.5, 1.0, 0.5] : [0.15, 0.3, 0.15],
+          scale: synthesizing ? [1, 1.25, 1] : 1,
         }}
-        transition={{ duration: 4 * speed, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 3 * speed, repeat: Infinity, ease: "easeInOut" }}
         className="absolute inset-[20%] pointer-events-none"
         style={{
           background: `radial-gradient(circle at 50% 50%, ${colors.glowIntense}, transparent 70%)`,
-          filter: "blur(8px)",
+          filter: "blur(10px)",
         }}
       />
 
-      {/* Violet synthesizing glow — only visible during synthesis */}
+      {/* Violet/Gold synthesizing glow — boosted intensity */}
       {synthesizing && (
         <motion.div
           animate={{
-            opacity: [0.3, 0.6, 0.3],
-            scale: [0.95, 1.08, 0.95],
+            opacity: [0.4, 0.85, 0.4],
+            scale: [0.9, 1.2, 0.9],
           }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute inset-[-10%] pointer-events-none"
+          transition={{ duration: 2 * speed, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-[-15%] pointer-events-none"
           style={{
-            background: "radial-gradient(ellipse 55% 65% at 50% 50%, rgba(140,80,255,0.3), rgba(100,60,220,0.1) 50%, transparent 80%)",
-            filter: "blur(10px)",
+            background: isGold 
+              ? "radial-gradient(ellipse 55% 65% at 50% 50%, rgba(200,164,93,0.35), rgba(200,164,93,0.15) 50%, transparent 80%)"
+              : "radial-gradient(ellipse 55% 65% at 50% 50%, rgba(140,80,255,0.4), rgba(100,60,220,0.15) 50%, transparent 80%)",
+            filter: "blur(12px)",
           }}
         />
       )}
