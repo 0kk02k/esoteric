@@ -51,7 +51,9 @@ export async function POST(
       );
     }
 
-    if (sessionToken && reading.sessionToken !== sessionToken) {
+    if (reading.userId) {
+      // Reading belongs to a logged-in user — allow access without sessionToken check
+    } else if (sessionToken && reading.sessionToken !== sessionToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

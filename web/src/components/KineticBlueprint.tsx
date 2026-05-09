@@ -93,7 +93,7 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
                       </SymbolChip>
                     )}
                   </div>
-                  <div className="text-text-secondary text-xl leading-[2] font-serif italic border-l border-gold/10 pl-6">
+                  <div className="text-text-secondary text-xl leading-[1.8] font-serif italic border-l border-gold/10 pl-6">
                     {cardBody.replace(/\*\*/g, '')}
                   </div>
                 </div>
@@ -128,7 +128,7 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 2, delay: 0.6 }}
-            className="text-text-secondary text-xl sm:text-2xl leading-[2] font-serif italic tracking-tight"
+            className="text-text-secondary text-xl leading-[1.8] font-serif italic border-l border-gold/10 pl-6"
           >
             {body.split("\n").map((line, i) => {
                 const trimmed = line.trim();
@@ -138,7 +138,7 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
                 
                 return (
                   <p key={i} className={cn(
-                    "mb-8 last:mb-0",
+                    "mb-4 last:mb-0",
                     isList && "pl-6 relative before:content-[''] before:absolute before:left-0 before:top-4 before:w-2 before:h-[1px] before:bg-gold/40"
                   )}>
                     {(isList ? trimmed.replace(/^[-·\d.]+\s*/, '') : trimmed).replace(/\*\*/g, '')}

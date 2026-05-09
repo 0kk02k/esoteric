@@ -71,7 +71,7 @@ export default function Home() {
             </Button>
           </Link>
           <p className="text-sm font-mono text-gold/60 uppercase tracking-widest">
-            3 freie Einblicke / Tag
+            Kostenlos & unbegrenzt
           </p>
         </motion.div>
       </section>
@@ -94,7 +94,7 @@ export default function Home() {
               {
                 icon: <Cpu className="w-6 h-6" />,
                 title: "KI-Synthese",
-                desc: "Keine fertigen Bausteine. Claude generiert eine einzigartige, poetische Deutung deiner aktuellen Situation.",
+                desc: "Keine fertigen Bausteine. KI generiert eine einzigartige, poetische Deutung deiner aktuellen Situation.",
               },
             ].map((feature, i) => (
               <Panel key={i} className="group hover:border-gold/30 transition-colors">

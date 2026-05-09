@@ -721,7 +721,7 @@ export default function ReadingPage() {
                       </div>
                       <h2 className="font-display text-3xl text-text mb-4 uppercase tracking-widest">Synthese läuft</h2>
                       <p className="text-xl text-text-secondary text-center max-w-md leading-relaxed font-serif italic">
-                        GPT-5.4 verwebt die symbolischen Fäden deiner Auswahl zu einem kohärenten Spiegelbild...
+                        KI verwebt die symbolischen Fäden deiner Auswahl zu einem kohärenten Spiegelbild...
                       </p>
                     </motion.div>
                   )}
@@ -741,7 +741,7 @@ export default function ReadingPage() {
                               <h3 className="text-[10px] font-mono text-violet tracking-[0.3em] uppercase">Interpretation Aktiv</h3>
                            </div>
                            <p className="text-[10px] font-mono text-violet/40 uppercase tracking-widest">
-                             Provider: OpenAI · Model: GPT-5.4 · Entropy: 0.8
+                             Synthese aktiv
                            </p>
                         </div>
                         
