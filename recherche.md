@@ -444,20 +444,19 @@ Empfohlen:
 
 Monetarisierung muss ab Tag 1 in die Architektur, weil KI-Kosten, Rate Limits und Nutzerbindung direkt davon abhaengen.
 
-### Modell fuer MVP
+### Modell für MVP (Implementiert)
 
-| Plan | Inhalt | Zweck |
-|------|--------|-------|
-| Free | 1 Reading pro Tag, begrenzte Laenge, keine Historie oder kurze Historie | Akquise und Habit-Building |
-| Plus | unbegrenztere Readings, gespeicherte Historie, Monatsreading, laengere Antworten | Wiederkehrende Umsaetze |
-| Premium Report | Einmaliger ausfuehrlicher PDF-/Web-Report | Hoeherer Warenkorb, Launch-Umsatz |
+| Plan | Inhalt | Status |
+|------|--------|--------|
+| Free | 3 Readings pro Tag, 1 Follow-up | Aktiv |
+| Plus | 20 Readings pro Tag, 5 Follow-ups, Archiv | Aktiv (Simuliert) |
+| Premium | Einmaliger Report | Geplant |
 
-### Preislogik testen
+### Rechtliche Umsetzung (Implementiert)
 
-- Free mit hartem Tageslimit
-- Plus im Bereich 7-15 EUR/Monat testen
-- Premium-Report als Einmalkauf testen
-- Founder-Angebot fuer Beta-Nutzer
+- **Impressum/Privacy/AGB**: Vollständig integriert.
+- **Consent Manager**: DSGVO-konformer Banner für Daten & KI.
+- **AI Transparency**: In Philosophie und Rechtstexten verankert.
 
 ### Kostenkontrolle
 
