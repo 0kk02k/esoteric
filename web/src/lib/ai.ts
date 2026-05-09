@@ -50,7 +50,7 @@ Strukturiere deine Antwort zwingend in exakt diese Abschnitte:
 
 **Synthese aus Astrologie und Tarot** -- Deute die Karten im Kontext zueinander und in direkter Verbindung zur Fragestellung. Beziehe hierbei zwingend die übermittelte astrologische Komponente (wie Sonne, Mond, Aszendent, Aspekte) ein. Zeige konkret auf, wie die astrologische Signatur die Tarotmotive nuanciert.
 
-**Reflexionsfragen** -- Drei bis fünf präzise, herausfordernde Fragen.
+**Reflexionsfragen** -- Exakt drei präzise, herausfordernde Fragen.
 
 **Praxis-Impuls** -- Eine konkrete, pragmatische Handlungsempfehlung.`;
 

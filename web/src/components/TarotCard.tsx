@@ -89,7 +89,7 @@ export default function TarotCard({
               exit={{ scale: 0.7, opacity: 0 }}
               transition={{ type: "spring", stiffness: 200, damping: 25 }}
               className="w-[55vh] max-w-[480px] rounded-[var(--radius-tarot)] border border-gold/50 overflow-hidden aspect-[5/9]"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); setZoomed(false); }}
             >
               {!imageError ? (
                 <img

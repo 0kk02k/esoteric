@@ -48,8 +48,9 @@ type ReadingState = {
   sessionToken: string;
   readingsRemaining: number | null;
   followupQuestion: string;
-  followupResult: string | null;
+  followupMessages: { role: "user" | "assistant"; content: string }[];
   followupLoading: boolean;
+  followupError: string | null;
 };
 
 const INITIAL_STATE: ReadingState = {
@@ -72,8 +73,9 @@ const INITIAL_STATE: ReadingState = {
   sessionToken: "",
   readingsRemaining: null,
   followupQuestion: "",
-  followupResult: null,
+  followupMessages: [],
   followupLoading: false,
+  followupError: null,
 };
 
 const CATEGORIES = [
@@ -264,14 +266,22 @@ export default function ReadingPage() {
 
   const submitFollowup = useCallback(async () => {
     if (!state.readingId || !state.followupQuestion.trim()) return;
-    setState((s) => ({ ...s, followupLoading: true }));
+    const question = state.followupQuestion;
+    setState((s) => ({
+      ...s,
+      followupLoading: true,
+      followupError: null,
+      followupQuestion: "",
+      followupMessages: [...s.followupMessages, { role: "user", content: question }],
+    }));
     try {
       const res = await fetch(`/api/readings/${state.readingId}/followup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          question: state.followupQuestion,
+          question,
           sessionToken: state.sessionToken,
+          history: state.followupMessages,
         }),
       });
       if (!res.ok) {
@@ -279,12 +289,16 @@ export default function ReadingPage() {
         throw new Error(err.error || `Follow-up error: ${res.status}`);
       }
       const data = await res.json();
-      setState((s) => ({ ...s, followupResult: data.text, followupQuestion: "", followupLoading: false }));
+      setState((s) => ({
+        ...s,
+        followupMessages: [...s.followupMessages, { role: "assistant", content: data.text }],
+        followupLoading: false,
+      }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      setState((s) => ({ ...s, error: msg, followupLoading: false }));
+      setState((s) => ({ ...s, followupError: msg, followupLoading: false }));
     }
-  }, [state.readingId, state.followupQuestion, state.sessionToken]);
+  }, [state.readingId, state.followupQuestion, state.sessionToken, state.followupMessages]);
 
   return (
     <div className="flex-1 px-4 py-8 sm:py-16 relative overflow-hidden">
@@ -754,47 +768,63 @@ export default function ReadingPage() {
                         </div>
                       </section>
 
-                      {/* Follow-up Section Embedded */}
+                      {/* Follow-up Chat Thread */}
                       {state.result && (
                         <div className="mt-20 pt-20 border-t border-gold/10">
-                           {!state.followupResult ? (
-                             <div className="space-y-8">
-                                <div className="flex flex-col gap-2">
-                                   <h3 className="text-xl font-display text-gold">Tiefer blicken</h3>
-                                   <p className="text-sm text-text-muted">Gibt es einen Aspekt, den wir genauer beleuchten sollen?</p>
-                                </div>
-                                
-                                <div className="flex gap-4">
-                                  <input
-                                    type="text"
-                                    value={state.followupQuestion}
-                                    onChange={(e) => setState((s) => ({ ...s, followupQuestion: e.target.value }))}
-                                    placeholder="Präzisiere deine Intention..."
-                                    className="flex-1 bg-surface-raised/20 border border-gold/10 rounded-full px-8 py-4 text-lg text-text focus:outline-none focus:border-gold/30 transition-all shadow-inner"
-                                  />
-                                  <Button
-                                    onClick={submitFollowup}
-                                    disabled={state.followupQuestion.trim().length < 3 || state.followupLoading}
-                                    className="px-10 h-auto"
-                                  >
-                                    {state.followupLoading ? <RefreshCw className="w-5 h-5 animate-spin" /> : "Senden"}
-                                  </Button>
-                                </div>
-                             </div>
-                           ) : (
-                             <motion.div 
-                               initial={{ opacity: 0, y: 20 }}
-                               animate={{ opacity: 1, y: 0 }}
-                               className="space-y-6"
+                           <div className="flex items-center gap-3 mb-8">
+                              <MessageSquare className="w-4 h-4 text-gold/60" />
+                              <h3 className="text-[10px] font-mono text-gold uppercase tracking-[0.3em]">Tiefer blicken</h3>
+                           </div>
+
+                           <div className="space-y-6 mb-8">
+                             {state.followupMessages.map((msg, i) => (
+                               <motion.div
+                                 key={i}
+                                 initial={{ opacity: 0, y: 10 }}
+                                 animate={{ opacity: 1, y: 0 }}
+                                 className={cn(
+                                   "flex",
+                                   msg.role === "user" ? "justify-end" : "justify-start"
+                                 )}
+                               >
+                                 <div className={cn(
+                                   "max-w-[80%] px-6 py-4 rounded-2xl",
+                                   msg.role === "user"
+                                     ? "bg-gold/10 border border-gold/20 text-text"
+                                     : "bg-surface-raised/40 border border-gold/10 text-text-secondary font-serif italic leading-[2]"
+                                 )}>
+                                   {msg.content}
+                                 </div>
+                               </motion.div>
+                             ))}
+                             {state.followupLoading && (
+                               <div className="flex justify-start">
+                                 <div className="bg-surface-raised/40 border border-gold/10 px-6 py-4 rounded-2xl">
+                                   <RefreshCw className="w-5 h-5 text-gold/40 animate-spin" />
+                                 </div>
+                               </div>
+                             )}
+                           </div>
+
+                           <div className="flex gap-4">
+                             <input
+                               type="text"
+                               value={state.followupQuestion}
+                               onChange={(e) => setState((s) => ({ ...s, followupQuestion: e.target.value, followupError: null }))}
+                               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && state.followupQuestion.trim().length >= 3 && !state.followupLoading && submitFollowup()}
+                               placeholder="Stelle eine Nachfrage..."
+                               className="flex-1 bg-surface-raised/20 border border-gold/10 rounded-full px-8 py-4 text-lg text-text focus:outline-none focus:border-gold/30 transition-all shadow-inner"
+                             />
+                             <Button
+                               onClick={submitFollowup}
+                               disabled={state.followupQuestion.trim().length < 3 || state.followupLoading}
+                               className="px-10 h-auto"
                              >
-                                <div className="flex items-center gap-3">
-                                   <MessageSquare className="w-4 h-4 text-gold/60" />
-                                   <h3 className="text-[10px] font-mono text-gold uppercase tracking-[0.3em]">Präzisierung</h3>
-                                </div>
-                                <div className="text-text-secondary text-xl leading-relaxed whitespace-pre-wrap font-serif italic border-l-2 border-gold/20 pl-10 py-4 bg-gold/5 rounded-r-2xl">
-                                  {state.followupResult}
-                                </div>
-                             </motion.div>
+                               {state.followupLoading ? <RefreshCw className="w-5 h-5 animate-spin" /> : "Senden"}
+                             </Button>
+                           </div>
+                           {state.followupError && (
+                             <p className="text-sm text-danger-muted font-mono mt-3">{state.followupError}</p>
                            )}
                         </div>
                       )}

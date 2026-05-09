@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
-import { generateReading } from "@/lib/ai";
-import type { TarotCard as AITarotCard } from "@/lib/ai";
+
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+const FOLLOWUP_SYSTEM_PROMPT = `Du bist ein empathischer, tiefgründiger Berater für symbolische Reflexion. Du knüpfst an eine bereits erstellte Tarot-/Astrologie-Deutung an und beantwortest Nachfragen des Ratsuchenden.
+
+Regeln:
+- Antworte direkt und auf die Frage fokussiert — kein neues vollständiges Reading.
+- Beziehe dich auf die bereits gezogenen Karten und astrologischen Aspekte.
+- Bleibe im Tonfall poetisch, aber klar.
+- Keine deterministischen Vorhersagen.
+- Antworte auf Deutsch.`;
 
 export async function POST(
   request: NextRequest,
@@ -10,9 +19,10 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { question, sessionToken } = body as {
+    const { question, sessionToken, history } = body as {
       question: string;
       sessionToken?: string;
+      history?: { role: "user" | "assistant"; content: string }[];
     };
 
     if (!question || question.trim().length < 3) {
@@ -45,27 +55,53 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const cards: AITarotCard[] = reading.tarotDraws.map((draw) => ({
-      name: draw.card.name,
-      position: draw.position,
-      upright: draw.upright,
-    }));
+    const cards = reading.tarotDraws.map((d) => {
+      const orientation = d.upright ? "aufrecht" : "umgekehrt";
+      return `${d.card.name} (${d.position}, ${orientation})`;
+    }).join(", ");
 
-    const followupQuestion = `${reading.question}\n\nNachfrage: ${question}\n\nBisherige Deutung (darauf aufbauend antworten):\n${reading.readingText.slice(0, 1000)}`;
+    const contextBlock = `Ursprüngliche Frage: ${reading.question}\nGezogene Karten: ${cards}\n\nBisherige Deutung:\n${reading.readingText.slice(0, 2000)}`;
 
-    const result = await generateReading({
-      question: followupQuestion,
-      cards,
-      sessionToken: reading.sessionToken ?? undefined,
+    const messages = [
+      { role: "system" as const, content: FOLLOWUP_SYSTEM_PROMPT },
+      { role: "system" as const, content: contextBlock },
+      ...(history || []).map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+      { role: "user" as const, content: question },
+    ];
+
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "API key not configured" }, { status: 500 });
+    }
+
+    const response = await fetch(OPENROUTER_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-4o-mini",
+        messages,
+        max_tokens: 1000,
+      }),
     });
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("OpenRouter followup error:", response.status, err);
+      return NextResponse.json({ error: `AI error: ${response.status}` }, { status: 502 });
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content?.trim() ?? "";
 
     const existingContext = reading.contextJson
       ? JSON.parse(reading.contextJson)
       : {};
     const updatedContext = {
       ...existingContext,
-      followup: question,
-      followupResponse: result.text,
+      followupHistory: [...(existingContext.followupHistory || []), { question, answer: text }],
     };
 
     await prisma.reading.update({
@@ -73,7 +109,7 @@ export async function POST(
       data: { contextJson: JSON.stringify(updatedContext) },
     });
 
-    return NextResponse.json({ text: result.text, model: result.model });
+    return NextResponse.json({ text });
   } catch (error) {
     console.error("Error generating follow-up:", error);
     const message = error instanceof Error ? error.message : String(error);
