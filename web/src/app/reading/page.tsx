@@ -713,7 +713,7 @@ export default function ReadingPage() {
                       exit={{ opacity: 0 }}
                       className="flex flex-col items-center justify-center py-32"
                     >
-                      <CrystalShard variant="violet" className="w-48 h-48 sm:w-56 sm:h-56 mb-16" />
+                      <CrystalShard variant="violet" synthesizing className="w-48 h-48 sm:w-56 sm:h-56 mb-16" />
                       <h2 className="font-display text-3xl text-text mb-4 uppercase tracking-widest">Synthese läuft</h2>
                       <p className="text-xl text-text-secondary text-center max-w-md leading-relaxed font-serif italic">
                         Der Kristall bricht das Licht deiner Symbole in ein kohärentes Spiegelbild...
