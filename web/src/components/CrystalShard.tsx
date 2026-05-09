@@ -44,7 +44,7 @@ export function CrystalShard({
 }: CrystalShardProps) {
   const isGold = variant === "gold";
 
-  const speed = synthesizing ? 0.7 : 1;
+  const speed = synthesizing ? 0.5 : 1;
 
   const colors = isGold
     ? {
@@ -118,14 +118,17 @@ export function CrystalShard({
     },
   ];
 
-  // Small orbiting shards — triangle fragments circling the construct
+  // Small orbiting shards — circling outside the main construct
+  // clockwise = positive orbitDir, counter-clockwise = negative orbitDir
   const orbitShards = [
-    { size: 10, distance: 54, duration: 18, startAngle: 0, rotateSpeed: 12, clip: "polygon(50% 0%, 100% 80%, 0% 80%)" },
-    { size: 8, distance: 58, duration: 22, startAngle: 72, rotateSpeed: -15, clip: "polygon(30% 0%, 100% 40%, 60% 100%, 0% 60%)" },
-    { size: 7, distance: 52, duration: 25, startAngle: 144, rotateSpeed: 10, clip: "polygon(50% 0%, 95% 65%, 5% 65%)" },
-    { size: 9, distance: 56, duration: 20, startAngle: 216, rotateSpeed: -18, clip: "polygon(20% 0%, 90% 20%, 80% 90%, 10% 70%)" },
-    { size: 6, distance: 60, duration: 28, startAngle: 288, rotateSpeed: 14, clip: "polygon(50% 0%, 100% 70%, 0% 70%)" },
-    { size: 7, distance: 50, duration: 24, startAngle: 36, rotateSpeed: -11, clip: "polygon(40% 0%, 100% 50%, 50% 100%, 0% 50%)" },
+    { size: 10, distance: 85, duration: 20, startAngle: 0, orbitDir: 1, rotateSpeed: 14, clip: "polygon(50% 0%, 100% 80%, 0% 80%)" },
+    { size: 8, distance: 92, duration: 26, startAngle: 60, orbitDir: -1, rotateSpeed: -16, clip: "polygon(30% 0%, 100% 40%, 60% 100%, 0% 60%)" },
+    { size: 7, distance: 88, duration: 30, startAngle: 130, orbitDir: 1, rotateSpeed: 11, clip: "polygon(50% 0%, 95% 65%, 5% 65%)" },
+    { size: 9, distance: 95, duration: 22, startAngle: 200, orbitDir: -1, rotateSpeed: -18, clip: "polygon(20% 0%, 90% 20%, 80% 90%, 10% 70%)" },
+    { size: 6, distance: 100, duration: 34, startAngle: 270, orbitDir: 1, rotateSpeed: 13, clip: "polygon(50% 0%, 100% 70%, 0% 70%)" },
+    { size: 7, distance: 82, duration: 28, startAngle: 330, orbitDir: -1, rotateSpeed: -12, clip: "polygon(40% 0%, 100% 50%, 50% 100%, 0% 50%)" },
+    { size: 5, distance: 98, duration: 36, startAngle: 160, orbitDir: 1, rotateSpeed: 10, clip: "polygon(50% 0%, 100% 75%, 0% 75%)" },
+    { size: 8, distance: 90, duration: 24, startAngle: 45, orbitDir: -1, rotateSpeed: -14, clip: "polygon(25% 0%, 100% 30%, 75% 100%, 0% 70%)" },
   ];
 
   // Debris particles
@@ -171,6 +174,22 @@ export function CrystalShard({
         }}
       />
 
+      {/* Violet synthesizing glow — only visible during synthesis */}
+      {synthesizing && (
+        <motion.div
+          animate={{
+            opacity: [0.3, 0.6, 0.3],
+            scale: [0.95, 1.08, 0.95],
+          }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-[-10%] pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse 55% 65% at 50% 50%, rgba(140,80,255,0.3), rgba(100,60,220,0.1) 50%, transparent 80%)",
+            filter: "blur(10px)",
+          }}
+        />
+      )}
+
       {/* Main crystal shards */}
       {shards.map((shard, i) => (
         <motion.div
@@ -178,23 +197,23 @@ export function CrystalShard({
           variants={shardVariants}
           animate={{
             y: [
-              shard.y + shard.floatY[0] * (synthesizing ? 1.4 : 1),
-              shard.y + shard.floatY[1] * (synthesizing ? 1.4 : 1),
-              shard.y + shard.floatY[0] * (synthesizing ? 1.4 : 1),
+              shard.y + shard.floatY[0] * (synthesizing ? 2.2 : 1),
+              shard.y + shard.floatY[1] * (synthesizing ? 2.2 : 1),
+              shard.y + shard.floatY[0] * (synthesizing ? 2.2 : 1),
             ],
             rotate: [
-              shard.rotate + shard.floatRotate[0] * (synthesizing ? 1.5 : 1),
-              shard.rotate + shard.floatRotate[1] * (synthesizing ? 1.5 : 1),
-              shard.rotate + shard.floatRotate[0] * (synthesizing ? 1.5 : 1),
+              shard.rotate + shard.floatRotate[0] * (synthesizing ? 2.5 : 1),
+              shard.rotate + shard.floatRotate[1] * (synthesizing ? 2.5 : 1),
+              shard.rotate + shard.floatRotate[0] * (synthesizing ? 2.5 : 1),
             ],
             x: shard.x,
-            scale: synthesizing ? [1, 1.02, 1] : 1,
+            scale: synthesizing ? [1, 1.04, 1] : 1,
           }}
           transition={{
             y: { duration: (7 + i) * speed, repeat: Infinity, ease: "easeInOut" },
-            rotate: { duration: (8 + i * 1.2) * speed, repeat: Infinity, ease: "easeInOut" },
+            rotate: { duration: (6 + i * 0.8) * speed, repeat: Infinity, ease: "easeInOut" },
             x: { duration: 0 },
-            scale: { duration: 3 * speed, repeat: Infinity, ease: "easeInOut" },
+            scale: { duration: 2 * speed, repeat: Infinity, ease: "easeInOut" },
           }}
           className="absolute inset-[10%]"
           style={{ transformOrigin: "center center" }}
@@ -243,6 +262,7 @@ export function CrystalShard({
               stroke={colors.edgeBase}
               strokeWidth="0.6"
             />
+            {/* Pulse 1 — clockwise direction */}
             <motion.path
               d={shard.edgePath}
               fill="none"
@@ -261,6 +281,7 @@ export function CrystalShard({
                 ease: "easeInOut",
               }}
             />
+            {/* Pulse 2 — counter-clockwise (reverse pathOffset) */}
             <motion.path
               d={shard.edgePath}
               fill="none"
@@ -269,7 +290,7 @@ export function CrystalShard({
               strokeLinecap="round"
               animate={{
                 pathLength: [0, 0.18, 0.18, 0],
-                pathOffset: [0.5, 0.7, 0.9, 1.2],
+                pathOffset: [1, 0.7, 0.4, 0],
                 opacity: [0, 0.5, 0.35, 0],
               }}
               transition={{
@@ -279,6 +300,7 @@ export function CrystalShard({
                 ease: "easeInOut",
               }}
             />
+            {/* Synth: additional fast pulse — clockwise */}
             {synthesizing && (
               <motion.path
                 d={shard.edgePath}
@@ -288,13 +310,34 @@ export function CrystalShard({
                 strokeLinecap="round"
                 animate={{
                   pathLength: [0, 0.3, 0.3, 0],
-                  pathOffset: [0.2, 0.5, 0.8, 1.1],
-                  opacity: [0, 0.8, 0.6, 0],
+                  pathOffset: [0.1, 0.4, 0.75, 1.05],
+                  opacity: [0, 0.85, 0.65, 0],
                 }}
                 transition={{
-                  duration: 5,
+                  duration: 3.5,
                   repeat: Infinity,
-                  delay: i * 0.8 + 1,
+                  delay: i * 0.6 + 0.5,
+                  ease: "easeInOut",
+                }}
+              />
+            )}
+            {/* Synth: additional fast pulse — counter-clockwise */}
+            {synthesizing && (
+              <motion.path
+                d={shard.edgePath}
+                fill="none"
+                stroke={colors.edgePulseSynth}
+                strokeWidth="1.1"
+                strokeLinecap="round"
+                animate={{
+                  pathLength: [0, 0.22, 0.22, 0],
+                  pathOffset: [0.9, 0.6, 0.3, 0],
+                  opacity: [0, 0.7, 0.5, 0],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  delay: i * 0.7 + 2,
                   ease: "easeInOut",
                 }}
               />
@@ -303,20 +346,20 @@ export function CrystalShard({
         </motion.div>
       ))}
 
-      {/* Small orbiting shards — rotating around the construct */}
+      {/* Small orbiting shards — rotating outside the construct */}
       {orbitShards.map((orb, i) => (
         <motion.div
           key={`orbit-${i}`}
-          animate={{ rotate: 360 }}
+          animate={{ rotate: orb.orbitDir * 360 }}
           transition={{
             duration: orb.duration * speed,
             repeat: Infinity,
-            ease: "linear",
+            ease: "linear" as const,
           }}
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-[-15%] pointer-events-none"
           style={{ transform: `rotate(${orb.startAngle}deg)` }}
         >
-          {/* The small shard positioned at orbit distance */}
+          {/* The small shard positioned at orbit distance from center */}
           <motion.div
             animate={{ rotate: orb.rotateSpeed > 0 ? 360 : -360 }}
             transition={{
