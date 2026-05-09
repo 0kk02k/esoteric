@@ -29,7 +29,7 @@ export default function LandingPage() {
   return (
     <div className="flex-1 flex flex-col">
       {/* Hero Section */}
-      <section className="relative pt-20 pb-32 overflow-hidden px-4">
+      <section className="relative pt-20 pb-32 overflow-hidden px-4 min-h-[90vh] flex flex-col justify-center">
         <div className="mx-auto max-w-6xl relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -37,6 +37,20 @@ export default function LandingPage() {
             transition={{ duration: 0.8 }}
             className="text-center"
           >
+            {/* The Central Arcane Anchor — Glass shards with energy orbits */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{ duration: 2, ease: "easeOut" }}
+              className="flex justify-center mb-16 relative"
+            >
+              <div className="relative w-64 h-64 sm:w-96 sm:h-96">
+                <CrystalShard variant="gold" synthesizing={true} className="w-full h-full" />
+                {/* Ambient Aura */}
+                <div className="absolute inset-0 bg-gold/10 blur-[100px] rounded-full -z-10 animate-pulse" />
+              </div>
+            </motion.div>
+
             <h1 className="text-4xl sm:text-7xl font-display font-semibold tracking-tight text-text leading-[1.1] max-w-3xl mx-auto mb-6">
               Dein Spiegel aus Sternen, Symbolen und <span className="text-gold italic font-medium heading-glow">KI</span>
             </h1>
