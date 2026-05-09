@@ -791,9 +791,18 @@ export default function ReadingPage() {
                                    "max-w-[80%] px-6 py-4 rounded-2xl",
                                    msg.role === "user"
                                      ? "bg-gold/10 border border-gold/20 text-text"
-                                     : "bg-surface-raised/40 border border-gold/10 text-text-secondary font-serif italic leading-[2]"
+                                     : "bg-surface-raised/40 border border-gold/10 text-text-secondary font-serif italic leading-[1.8]"
                                  )}>
-                                   {msg.content}
+                                   {msg.role === "assistant" ? (
+                                     <div className="space-y-3">
+                                       {msg.content.split("\n").map((line, li) => {
+                                         const t = line.trim();
+                                         if (!t) return null;
+                                         const clean = t.replace(/\*\*/g, '');
+                                         return <p key={li}>{clean}</p>;
+                                       })}
+                                     </div>
+                                   ) : msg.content}
                                  </div>
                                </motion.div>
                              ))}

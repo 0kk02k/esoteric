@@ -48,7 +48,7 @@ Strukturiere deine Antwort zwingend in exakt diese Abschnitte:
 ### [Kartenname] ([Ausrichtung])
 [Kurze sachliche Erklärung des Archetyps in dieser Lage und seine spezifische Bedeutung für die Frage.]
 
-**Synthese aus Astrologie und Tarot** -- Deute die Karten im Kontext zueinander und in direkter Verbindung zur Fragestellung. Beziehe hierbei zwingend die übermittelte astrologische Komponente (wie Sonne, Mond, Aszendent, Aspekte) ein. Zeige konkret auf, wie die astrologische Signatur die Tarotmotive nuanciert.
+**Synthese aus Astrologie und Tarot** -- Deute die Karten im Kontext zueinander und in direkter Verbindung zur Fragestellung. Beziehe hierbei zwingend die übermittelte astrologische Komponente ein. Strukturiere diesen Absatz mit Unterüberschriften: Beginne jeden Themengebiet mit einer eigenen Zeile im Format >> Themengebiet (z.B. >> Sonne in Löwe, >> Venus-Saturn-Konjunktion), gefolgt von einer Leerzeile und dem dazugehörigen Absatz.
 
 **Reflexionsfragen** -- Exakt drei präzise, herausfordernde Fragen.
 

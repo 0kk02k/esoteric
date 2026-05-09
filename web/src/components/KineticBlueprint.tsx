@@ -22,10 +22,8 @@ interface KineticTextProps {
 }
 
 export const KineticBlueprint = ({ text, cards, className }: KineticTextProps) => {
-  // Split text into sections based on the specified format (Einstieg, Kernthema, etc.)
-  // If not formatted, split by double newlines
-  const sections = text.includes("**") 
-    ? text.split(/\n(?=\*\*)/) 
+  const sections = text.includes("**")
+    ? text.split(/\n(?=\*\*)/)
     : text.split(/\n\n+/);
 
   return (
@@ -37,23 +35,22 @@ export const KineticBlueprint = ({ text, cards, className }: KineticTextProps) =
   );
 };
 
+const stripMarkdown = (s: string) => s.replace(/\*\*/g, '');
+
 const BlueprintSection = ({ content, index, cards }: { content: string; index: number; cards?: DrawnCard[] }) => {
   const [isRendered, setIsRendered] = useState(false);
 
   useEffect(() => {
-    // Staggered appearance
     const timer = setTimeout(() => setIsRendered(true), index * 1000);
     return () => clearTimeout(timer);
   }, [index]);
 
   if (!isRendered) return null;
 
-  // Extract title if it's in **Title** format
   const match = content.match(/^\s*\*\*([\s\S]*?)\*\*\s*:?\s*([\s\S]*)/);
   const title = match ? match[1] : null;
   const body = match ? match[2] : content;
 
-  // Special handling for "Die Karten"
   if (title === "Die Karten" && cards) {
     const cardSegments = body.split(/\n(?=###)/);
     return (
@@ -63,14 +60,13 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
           {cardSegments.map((segment, i) => {
             const cardMatch = segment.match(/### (.*?) \((.*?)\)\n([\s\S]*)/);
             if (!cardMatch) return <p key={i} className="text-text-secondary italic pl-8">{segment}</p>;
-            
+
             const cardName = cardMatch[1].trim();
             const orientation = cardMatch[2].trim();
             const cardBody = cardMatch[3].trim();
-            
-            // Find the matching card in the props
-            const cardData = cards.find(c => 
-              c.name.toLowerCase().includes(cardName.toLowerCase()) || 
+
+            const cardData = cards.find(c =>
+              c.name.toLowerCase().includes(cardName.toLowerCase()) ||
               cardName.toLowerCase().includes(c.name.toLowerCase())
             );
 
@@ -94,7 +90,7 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
                     )}
                   </div>
                   <div className="text-text-secondary text-xl leading-[1.8] font-serif italic border-l border-gold/10 pl-6">
-                    {cardBody.replace(/\*\*/g, '')}
+                    {stripMarkdown(cardBody)}
                   </div>
                 </div>
                 {cardData && (
@@ -122,7 +118,7 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
 
       <div className="pl-8 space-y-6">
         {title && <SectionHeader title={title} showLine={true} />}
-        
+
         <div className="relative">
           <motion.div
             initial={{ opacity: 0 }}
@@ -131,19 +127,29 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
             className="text-text-secondary text-xl leading-[1.8] font-serif italic border-l border-gold/10 pl-6"
           >
             {body.split("\n").map((line, i) => {
-                const trimmed = line.trim();
-                if (!trimmed) return null;
-                
-                const isList = trimmed.startsWith("-") || trimmed.startsWith("·") || /^\d+\./.test(trimmed);
-                
+              const trimmed = line.trim();
+              if (!trimmed) return null;
+
+              const isList = trimmed.startsWith("-") || trimmed.startsWith("·") || /^\d+\./.test(trimmed);
+              const isSubHeading = trimmed.startsWith(">>");
+              const clean = stripMarkdown(isList ? trimmed.replace(/^[-·\d.]+\s*/, '') : trimmed);
+
+              if (isSubHeading) {
                 return (
-                  <p key={i} className={cn(
-                    "mb-4 last:mb-0",
-                    isList && "pl-6 relative before:content-[''] before:absolute before:left-0 before:top-4 before:w-2 before:h-[1px] before:bg-gold/40"
-                  )}>
-                    {(isList ? trimmed.replace(/^[-·\d.]+\s*/, '') : trimmed).replace(/\*\*/g, '')}
+                  <p key={i} className="text-gold/80 font-mono text-[11px] uppercase tracking-[0.3em] mt-8 first:mt-0 mb-2 not-italic">
+                    {clean.replace(/^>>\s*/, '')}
                   </p>
                 );
+              }
+
+              return (
+                <p key={i} className={cn(
+                  "mb-4 last:mb-0",
+                  isList && "pl-6 relative before:content-[''] before:absolute before:left-0 before:top-4 before:w-2 before:h-[1px] before:bg-gold/40"
+                )}>
+                  {clean}
+                </p>
+              );
             })}
           </motion.div>
 
@@ -165,11 +171,11 @@ const SectionHeader = ({ title, showLine = false }: { title: string; showLine?: 
 
 const Sidebar = () => (
   <div className="absolute -left-8 top-0 bottom-0 w-[1px] bg-gold/10 group-hover:bg-gold/30 transition-colors">
-    <motion.div 
+    <motion.div
       initial={{ height: 0 }}
       animate={{ height: "100%" }}
       transition={{ duration: 2.5, ease: "easeInOut" }}
-      className="absolute top-0 left-0 w-full bg-gold/40" 
+      className="absolute top-0 left-0 w-full bg-gold/40"
     />
     <div className="absolute top-0 -left-1 w-2 h-2 rounded-full border border-gold/40 bg-bg" />
     <div className="absolute bottom-0 -left-1 w-2 h-2 rounded-full border border-gold/40 bg-bg" />
@@ -185,4 +191,3 @@ const BottomLine = () => (
     className="absolute -bottom-4 left-0 h-[0.5px] bg-gradient-to-r from-gold/20 via-gold/10 to-transparent"
   />
 );
-
