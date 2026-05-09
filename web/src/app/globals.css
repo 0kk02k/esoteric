@@ -232,6 +232,77 @@ h1, h2, h3, h4, h5, h6, .font-display {
   50% { opacity: 1; transform: scale(1.1) rotate(45deg); }
 }
 
+/* Scroll indicator bounce */
+@keyframes scroll-bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50% { transform: translateY(8px); opacity: 1; }
+}
+
+.scroll-indicator {
+  animation: scroll-bounce 2.5s ease-in-out infinite;
+}
+
+/* Text gradients */
+.text-gradient-gold {
+  background: linear-gradient(180deg, #e0c98a 0%, #c8a45d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-violet {
+  background: linear-gradient(180deg, #a78bfa 0%, #7c5cff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Violet semantic panel for AI content */
+.glass-panel-violet {
+  background: rgba(14, 10, 28, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(124, 92, 255, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8), inset 0 0 40px rgba(124, 92, 255, 0.03);
+}
+
+/* Synthesis stage ambient glow */
+.synthesis-glow {
+  background:
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(124, 92, 255, 0.15), transparent 70%),
+    radial-gradient(ellipse 30% 50% at 30% 50%, rgba(140, 80, 255, 0.06), transparent 60%),
+    radial-gradient(ellipse 30% 50% at 70% 50%, rgba(100, 60, 220, 0.06), transparent 60%);
+}
+
+/* Progress shimmer for synthesis */
+@keyframes progress-shimmer {
+  0% { left: -40%; }
+  100% { left: 140%; }
+}
+
+.progress-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.progress-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(124, 92, 255, 0.4), transparent);
+  animation: progress-shimmer 2.5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

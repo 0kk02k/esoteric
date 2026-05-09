@@ -55,7 +55,7 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
     const cardSegments = body.split(/\n(?=###)/);
     return (
       <div className="space-y-12">
-        <SectionHeader title={title} />
+        <SectionHeader title={title} variant="gold" />
         <div className="grid grid-cols-1 gap-16">
           {cardSegments.map((segment, i) => {
             const cardMatch = segment.match(/### (.*?) \((.*?)\)\n([\s\S]*)/);
@@ -114,17 +114,17 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
       transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
       className="relative group"
     >
-      <Sidebar />
+      <Sidebar variant="violet" />
 
       <div className="pl-8 space-y-6">
-        {title && <SectionHeader title={title} showLine={true} />}
+        {title && <SectionHeader title={title} showLine={true} variant="violet" />}
 
         <div className="relative">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 2, delay: 0.6 }}
-            className="text-text-secondary text-xl sm:text-2xl leading-[1.7] font-serif italic border-l border-gold/10 pl-6"
+            className="text-text-secondary text-xl sm:text-2xl leading-[1.7] font-serif italic border-l border-violet/10 pl-6"
           >
             {body.split("\n").map((line, i) => {
               const trimmed = line.trim();
@@ -136,7 +136,7 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
 
               if (isSubHeading) {
                 return (
-                  <p key={i} className="text-gold/80 font-mono text-[11px] uppercase tracking-[0.3em] mt-8 first:mt-0 mb-2 not-italic">
+                  <p key={i} className="text-violet/80 font-mono text-[11px] uppercase tracking-[0.3em] mt-8 first:mt-0 mb-2 not-italic">
                     {clean.replace(/^>>\s*/, '')}
                   </p>
                 );
@@ -145,7 +145,7 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
               return (
                 <p key={i} className={cn(
                   "mb-4 last:mb-0",
-                  isList && "pl-6 relative before:content-[''] before:absolute before:left-0 before:top-4 before:w-2 before:h-[1px] before:bg-gold/40"
+                  isList && "pl-6 relative before:content-[''] before:absolute before:left-0 before:top-4 before:w-2 before:h-[1px] before:bg-violet/40"
                 )}>
                   {clean}
                 </p>
@@ -153,41 +153,64 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
             })}
           </motion.div>
 
-          <BottomLine />
+          <BottomLine variant="violet" />
         </div>
       </div>
     </motion.div>
   );
 };
 
-const SectionHeader = ({ title, showLine = false }: { title: string; showLine?: boolean }) => (
+const SectionHeader = ({ title, showLine = false, variant = "violet" }: { title: string; showLine?: boolean; variant?: "gold" | "violet" }) => (
   <div className="flex items-center gap-6">
-    <h4 className="text-[11px] font-mono text-gold uppercase tracking-[0.4em] font-bold">
+    <h4 className={cn(
+      "text-[11px] font-mono uppercase tracking-[0.4em] font-bold",
+      variant === "gold" ? "text-gold" : "text-violet"
+    )}>
       {title}
     </h4>
-    {showLine && <div className="h-[0.5px] flex-1 bg-gradient-to-r from-gold/30 to-transparent" />}
+    {showLine && <div className={cn(
+      "h-[0.5px] flex-1 bg-gradient-to-r to-transparent",
+      variant === "gold" ? "from-gold/30" : "from-violet/30"
+    )} />}
   </div>
 );
 
-const Sidebar = () => (
-  <div className="absolute -left-8 top-0 bottom-0 w-[1px] bg-gold/10 group-hover:bg-gold/30 transition-colors">
+const Sidebar = ({ variant = "violet" }: { variant?: "gold" | "violet" }) => (
+  <div className={cn(
+    "absolute -left-8 top-0 bottom-0 w-[1px] transition-colors",
+    variant === "gold" ? "bg-gold/10 group-hover:bg-gold/30" : "bg-violet/10 group-hover:bg-violet/30"
+  )}>
     <motion.div
       initial={{ height: 0 }}
       animate={{ height: "100%" }}
       transition={{ duration: 2.5, ease: "easeInOut" }}
-      className="absolute top-0 left-0 w-full bg-gold/40"
+      className={cn(
+        "absolute top-0 left-0 w-full",
+        variant === "gold" ? "bg-gold/40" : "bg-violet/40"
+      )}
     />
-    <div className="absolute top-0 -left-1 w-2 h-2 rounded-full border border-gold/40 bg-bg" />
-    <div className="absolute bottom-0 -left-1 w-2 h-2 rounded-full border border-gold/40 bg-bg" />
+    <div className={cn(
+      "absolute top-0 -left-1 w-2 h-2 rounded-full border bg-bg",
+      variant === "gold" ? "border-gold/40" : "border-violet/40"
+    )} />
+    <div className={cn(
+      "absolute bottom-0 -left-1 w-2 h-2 rounded-full border bg-bg",
+      variant === "gold" ? "border-gold/40" : "border-violet/40"
+    )} />
   </div>
 );
 
-const BottomLine = () => (
+const BottomLine = ({ variant = "violet" }: { variant?: "gold" | "violet" }) => (
   <motion.div
     initial={{ width: 0 }}
     whileInView={{ width: "100%" }}
     viewport={{ once: true }}
     transition={{ duration: 1.5, delay: 0.4 }}
-    className="absolute -bottom-4 left-0 h-[0.5px] bg-gradient-to-r from-gold/20 via-gold/10 to-transparent"
+    className={cn(
+      "absolute -bottom-4 left-0 h-[0.5px] bg-gradient-to-r to-transparent",
+      variant === "gold"
+        ? "from-gold/20 via-gold/10"
+        : "from-violet/20 via-violet/10"
+    )}
   />
 );

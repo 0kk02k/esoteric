@@ -13,7 +13,7 @@ import { Button } from "@/components/Button";
 import { KineticBlueprint } from "@/components/KineticBlueprint";
 import { CrystalShard } from "@/components/CrystalShard";
 import { CrystalSpinner } from "@/components/CrystalSpinner";
-import { Sparkles, ArrowLeft, RefreshCw, X, Info, LayoutGrid, MessageSquare, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowLeft, X, Info, LayoutGrid, MessageSquare, ArrowRight } from "lucide-react";
 import type { ReadingResponse } from "@/lib/ai";
 import type { ChartResponse } from "@/lib/astrology";
 import { getOrCreateSessionToken } from "@/lib/session";
@@ -393,13 +393,13 @@ export default function ReadingPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                     >
-                      <Panel className="p-8 sm:p-12">
-                        <div className="flex items-center gap-4 mb-8">
-                           <div className="w-10 h-10 rounded-full border border-gold/20 flex items-center justify-center">
-                              <Sparkles className="w-5 h-5 text-gold" />
-                           </div>
-                           <h2 className="font-display text-3xl sm:text-4xl text-text leading-tight heading-glow">Was beschäftigt dich?</h2>
-                        </div>
+                      <Panel className="p-5 sm:p-8 lg:p-12">
+                         <div className="flex items-center gap-4 mb-8">
+                            <div className="w-10 h-10 rounded-full border border-gold/20 flex items-center justify-center">
+                               <Sparkles className="w-5 h-5 text-gold" />
+                            </div>
+                            <h2 className="font-display text-3xl sm:text-4xl text-text leading-tight heading-glow">Was beschäftigt dich?</h2>
+                         </div>
                         
                         <textarea
                           value={state.question}
@@ -456,12 +456,12 @@ export default function ReadingPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                     >
-                      <Panel className="p-8 sm:p-12">
-                        <div className="flex items-center gap-4 mb-6">
-                           <div className="w-10 h-10 rounded-full border border-gold/20 flex items-center justify-center">
-                              <Sparkles className="w-5 h-5 text-gold" />
-                           </div>
-                           <h2 className="font-display text-3xl sm:text-4xl text-text heading-glow">Himmelsmechanik</h2>
+                      <Panel className="p-5 sm:p-8 lg:p-12">
+                         <div className="flex items-center gap-4 mb-6">
+                            <div className="w-10 h-10 rounded-full border border-gold/20 flex items-center justify-center">
+                               <Sparkles className="w-5 h-5 text-gold" />
+                            </div>
+                            <h2 className="font-display text-3xl sm:text-4xl text-text heading-glow">Himmelsmechanik</h2>
                         </div>
                         
                         <p className="text-xl text-text-secondary leading-relaxed mb-6 max-w-2xl">
@@ -571,40 +571,7 @@ export default function ReadingPage() {
                         </p>
                       </div>
 
-                      {state.chart && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="w-full max-w-2xl mx-auto"
-                        >
-                          <Panel className="bg-surface-raised/30 border-gold/10 py-4 px-6 relative overflow-hidden">
-                            <div className="flex flex-wrap justify-center gap-6 items-center">
-                              <div className="flex flex-col items-center gap-1">
-                                <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Sonne</span>
-                                <SymbolChip variant="gold" className="px-3 py-0.5">
-                                  {state.chart.planets.find(p => p.name === "Sonne")?.sign}
-                                </SymbolChip>
-                              </div>
-                              <div className="flex flex-col items-center gap-1">
-                                <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Mond</span>
-                                <SymbolChip variant="gold" className="px-3 py-0.5">
-                                  {state.chart.planets.find(p => p.name === "Mond")?.sign}
-                                </SymbolChip>
-                              </div>
-                              {state.chart.ascendant && (
-                                <div className="flex flex-col items-center gap-1">
-                                  <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Aszendent</span>
-                                  <SymbolChip variant="gold" className="px-3 py-0.5">
-                                    {state.chart.ascendant.sign}
-                                  </SymbolChip>
-                                </div>
-                              )}
-                            </div>
-                          </Panel>
-                        </motion.div>
-                      )}
-
-                      {state.shuffledDeck.length > 0 ? (
+                       {state.shuffledDeck.length > 0 ? (
                         <StellarField
                           cardIds={state.shuffledDeck}
                           onComplete={handleStellarComplete}
@@ -732,20 +699,62 @@ export default function ReadingPage() {
                     </motion.div>
                   )}
 
-                  {/* Step 4: Generating */}
+                  {/* Step 4: Generating — Immersive Violet Stage */}
                   {state.step === "generating" && (
                     <motion.div
                       key="generating"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="flex flex-col items-center justify-center py-32"
+                      className="flex flex-col items-center justify-center min-h-[75vh] relative overflow-hidden"
                     >
-                      <CrystalShard variant="violet" synthesizing className="w-48 h-48 sm:w-56 sm:h-56 mb-16" />
-                      <h2 className="font-display text-3xl text-text mb-4 uppercase tracking-widest text-shadow-violet">Synthese läuft</h2>
-                      <p className="text-xl text-text-secondary text-center max-w-md leading-relaxed font-serif italic">
-                        Der Kristall bricht das Licht deiner Symbole in ein kohärentes Spiegelbild...
-                      </p>
+                      {/* Full-bleed violet atmosphere */}
+                      <div className="absolute inset-0 synthesis-glow pointer-events-none" />
+                      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(124,92,255,0.08),transparent_70%)] pointer-events-none" />
+
+                      <div className="relative z-10 flex flex-col items-center text-center px-4">
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 1.2, ease: "easeOut" }}
+                        >
+                          <CrystalShard variant="violet" synthesizing className="w-56 h-56 sm:w-72 sm:h-72 mb-12" />
+                        </motion.div>
+
+                        <motion.h2
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.4, duration: 0.8 }}
+                          className="font-display text-4xl sm:text-5xl lg:text-6xl text-gradient-violet mb-6 uppercase tracking-widest"
+                        >
+                          Synthese läuft
+                        </motion.h2>
+
+                        <motion.p
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.8, duration: 0.8 }}
+                          className="text-xl sm:text-2xl text-text-secondary max-w-lg leading-relaxed font-serif italic mb-16"
+                        >
+                          Der Kristall bricht das Licht deiner Symbole in ein kohärentes Spiegelbild...
+                        </motion.p>
+
+                        {/* Pseudofortschritt */}
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 1.2, duration: 0.6 }}
+                          className="w-full max-w-md space-y-4"
+                        >
+                          <div className="h-[2px] w-full bg-violet/10 rounded-full overflow-hidden relative">
+                            <div className="progress-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-violet/40 to-transparent" />
+                          </div>
+                          <div className="flex justify-between text-[10px] font-mono text-violet/40 uppercase tracking-[0.3em]">
+                            <span>Symbol-Vektoren laden</span>
+                            <span className="animate-pulse">...</span>
+                          </div>
+                        </motion.div>
+                      </div>
                     </motion.div>
                   )}
 
@@ -779,16 +788,16 @@ export default function ReadingPage() {
                           </Panel>
                         )}
 
-                        <div className="flex items-center gap-6 mt-16 pt-8 border-t border-gold/10 text-[9px] font-mono text-text-muted uppercase tracking-widest">
-                          <div className="flex items-center gap-2">
-                             <LayoutGrid className="w-3 h-3" />
-                             <span>Blueprint Engine v2.4</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                             <Sparkles className="w-3 h-3" />
-                             <span>Symbolische Reflexion</span>
-                          </div>
-                        </div>
+                         <div className="flex items-center gap-6 mt-16 pt-8 border-t border-violet/10 text-[9px] font-mono text-violet/40 uppercase tracking-widest">
+                           <div className="flex items-center gap-2">
+                              <LayoutGrid className="w-3 h-3" />
+                              <span>Blueprint Engine v2.4</span>
+                           </div>
+                           <div className="flex items-center gap-2">
+                              <Sparkles className="w-3 h-3" />
+                              <span>Symbolische Reflexion</span>
+                           </div>
+                         </div>
                       </section>
 
                       {/* Follow-up Chat Thread */}
@@ -829,32 +838,32 @@ export default function ReadingPage() {
                                  </div>
                                </motion.div>
                              ))}
-                             {state.followupLoading && (
-                                <div className="flex justify-start">
-                                  <div className="glass-bubble glass-bubble-ai px-6 py-4 rounded-2xl">
-                                    <RefreshCw className="w-5 h-5 text-violet/50 animate-spin" />
-                                  </div>
-                                </div>
-                              )}
+                              {state.followupLoading && (
+                                 <div className="flex justify-start">
+                                   <div className="glass-bubble glass-bubble-ai px-6 py-4 rounded-2xl">
+                                     <CrystalSpinner className="scale-75" />
+                                   </div>
+                                 </div>
+                               )}
                            </div>
 
-                           <div className="flex gap-4">
-                             <input
-                                type="text"
-                                value={state.followupQuestion}
-                                onChange={(e) => setState((s) => ({ ...s, followupQuestion: e.target.value, followupError: null }))}
-                                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && state.followupQuestion.trim().length >= 3 && !state.followupLoading && submitFollowup()}
-                                placeholder="Stelle eine Nachfrage..."
-                                className="flex-1 glass-input rounded-full px-8 py-4 text-lg text-text"
-                              />
-                             <Button
-                               onClick={submitFollowup}
-                               disabled={state.followupQuestion.trim().length < 3 || state.followupLoading}
-                               className="px-10 h-auto"
-                             >
-                               {state.followupLoading ? <RefreshCw className="w-5 h-5 animate-spin" /> : "Senden"}
-                             </Button>
-                           </div>
+                            <div className="flex gap-4">
+                              <input
+                                 type="text"
+                                 value={state.followupQuestion}
+                                 onChange={(e) => setState((s) => ({ ...s, followupQuestion: e.target.value, followupError: null }))}
+                                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && state.followupQuestion.trim().length >= 3 && !state.followupLoading && submitFollowup()}
+                                 placeholder="Stelle eine Nachfrage..."
+                                 className="flex-1 glass-input rounded-2xl px-6 py-4 text-lg text-text"
+                               />
+                              <Button
+                                onClick={submitFollowup}
+                                disabled={state.followupQuestion.trim().length < 3 || state.followupLoading}
+                                className="px-8 h-auto"
+                              >
+                                {state.followupLoading ? <CrystalSpinner className="scale-75" /> : "Senden"}
+                              </Button>
+                            </div>
                            {state.followupError && (
                              <p className="text-sm text-danger-muted font-mono mt-3">{state.followupError}</p>
                            )}

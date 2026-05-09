@@ -18,7 +18,7 @@ export default function StepIndicator({ current }: { current: Step }) {
   const currentIdx = STEPS.findIndex((s) => s.id === current);
 
   return (
-    <nav aria-label="Fortschritt" className="flex items-center gap-2 sm:gap-3">
+    <nav aria-label="Fortschritt" className="flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide pb-1 -mb-1">
       {STEPS.map((step, i) => {
         const active = i === currentIdx;
         const completed = i < currentIdx;
