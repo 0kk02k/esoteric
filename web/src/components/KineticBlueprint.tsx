@@ -75,12 +75,12 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
             );
 
             return (
-              <motion.div 
+              <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="flex flex-col md:flex-row gap-12 pl-8"
+                className="flex flex-col md:flex-row items-center gap-12 pl-8"
               >
                 <div className="flex-1 space-y-4">
                   <div className="flex items-center justify-between gap-4">
@@ -93,8 +93,8 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
                       </SymbolChip>
                     )}
                   </div>
-                  <div className="text-text-secondary text-xl leading-relaxed font-serif italic border-l border-gold/10 pl-6">
-                    {cardBody}
+                  <div className="text-text-secondary text-xl leading-[2] font-serif italic border-l border-gold/10 pl-6">
+                    {cardBody.replace(/\*\*/g, '')}
                   </div>
                 </div>
                 {cardData && (
@@ -128,7 +128,7 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 2, delay: 0.6 }}
-            className="text-text-secondary text-xl sm:text-2xl leading-relaxed font-serif italic tracking-tight"
+            className="text-text-secondary text-xl sm:text-2xl leading-[2] font-serif italic tracking-tight"
           >
             {body.split("\n").map((line, i) => {
                 const trimmed = line.trim();
@@ -138,10 +138,10 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
                 
                 return (
                   <p key={i} className={cn(
-                    "mb-6 last:mb-0",
+                    "mb-8 last:mb-0",
                     isList && "pl-6 relative before:content-[''] before:absolute before:left-0 before:top-4 before:w-2 before:h-[1px] before:bg-gold/40"
                   )}>
-                    {isList ? trimmed.replace(/^[-·\d.]+\s*/, '') : trimmed}
+                    {(isList ? trimmed.replace(/^[-·\d.]+\s*/, '') : trimmed).replace(/\*\*/g, '')}
                   </p>
                 );
             })}
