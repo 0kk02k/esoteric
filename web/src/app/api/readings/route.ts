@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { createReadingSchema } from "@/lib/validation";
-import { checkUsageLimit } from "@/lib/usage-limits";
+import { checkUsageLimit, incrementUsageCount } from "@/lib/usage-limits";
 import { auth } from "@/auth";
 
 export async function POST(request: NextRequest) {

@@ -13,7 +13,7 @@ import { Button } from "@/components/Button";
 import { KineticBlueprint } from "@/components/KineticBlueprint";
 import { CrystalShard } from "@/components/CrystalShard";
 import { CrystalSpinner } from "@/components/CrystalSpinner";
-import { Sparkles, ArrowLeft, RefreshCw, X, Info, LayoutGrid, MessageSquare } from "lucide-react";
+import { Sparkles, ArrowLeft, RefreshCw, X, Info, LayoutGrid, MessageSquare, ArrowRight } from "lucide-react";
 import type { ReadingResponse } from "@/lib/ai";
 import type { ChartResponse } from "@/lib/astrology";
 import { getOrCreateSessionToken } from "@/lib/session";

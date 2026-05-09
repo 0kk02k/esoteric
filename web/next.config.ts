@@ -10,9 +10,6 @@ export default withSentryConfig(nextConfig, {
   silent: true,
   org: "eso-mystic",
   project: "web",
-}, {
-  // Additional Sentry configuration
   widenClientFileUpload: true,
-  hideSourceMaps: true,
   disableLogger: true,
 });
