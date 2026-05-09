@@ -12,6 +12,7 @@ import { Panel } from "@/components/Panel";
 import { Button } from "@/components/Button";
 import { KineticBlueprint } from "@/components/KineticBlueprint";
 import { CrystalShard } from "@/components/CrystalShard";
+import { CrystalSpinner } from "@/components/CrystalSpinner";
 import { Sparkles, ArrowLeft, RefreshCw, X, Info, LayoutGrid, MessageSquare } from "lucide-react";
 import type { ReadingResponse } from "@/lib/ai";
 import type { ChartResponse } from "@/lib/astrology";
@@ -370,7 +371,7 @@ export default function ReadingPage() {
                            <div className="w-10 h-10 rounded-full border border-gold/20 flex items-center justify-center">
                               <Sparkles className="w-5 h-5 text-gold" />
                            </div>
-                           <h2 className="font-display text-3xl sm:text-4xl text-text leading-tight">Was beschäftigt dich?</h2>
+                           <h2 className="font-display text-3xl sm:text-4xl text-text leading-tight heading-glow">Was beschäftigt dich?</h2>
                         </div>
                         
                         <textarea
@@ -379,7 +380,7 @@ export default function ReadingPage() {
                           placeholder="Beschreibe dein Thema oder stelle eine offene Frage..."
                           rows={6}
                           maxLength={500}
-                          className="w-full bg-surface-raised/30 border border-gold/10 rounded-2xl px-6 py-5 text-xl text-text placeholder:text-text-muted focus:outline-none focus:border-gold/40 transition-all resize-none mb-8 shadow-inner"
+                          className="w-full glass-input rounded-2xl px-6 py-5 text-xl text-text resize-none mb-8"
                         />
 
                         <div className="mb-10">
@@ -391,10 +392,10 @@ export default function ReadingPage() {
                                 type="button"
                                 onClick={() => setState((s) => ({ ...s, questionCategory: cat.value }))}
                                 className={cn(
-                                   "text-xs font-mono px-6 py-3 rounded-full transition-all border",
+                                   "text-xs font-mono px-6 py-3 rounded-xl transition-all",
                                    state.questionCategory === cat.value
-                                     ? "bg-gold/20 text-gold border-gold/40 shadow-[0_0_15px_rgba(200,164,93,0.15)]"
-                                     : "bg-surface-raised/40 text-text-muted border-gold/5 hover:border-gold/20 hover:text-text-secondary"
+                                     ? "crystal-chip crystal-chip-active text-gold"
+                                     : "crystal-chip text-text-muted hover:text-text-secondary"
                                 )}
                               >
                                 {cat.label}
@@ -433,7 +434,7 @@ export default function ReadingPage() {
                            <div className="w-10 h-10 rounded-full border border-gold/20 flex items-center justify-center">
                               <Sparkles className="w-5 h-5 text-gold" />
                            </div>
-                           <h2 className="font-display text-3xl sm:text-4xl text-text">Himmelsmechanik</h2>
+                           <h2 className="font-display text-3xl sm:text-4xl text-text heading-glow">Himmelsmechanik</h2>
                         </div>
                         
                         <p className="text-xl text-text-secondary leading-relaxed mb-6 max-w-2xl">
@@ -480,7 +481,7 @@ export default function ReadingPage() {
                                   type="date"
                                   value={state.birthDate}
                                   onChange={(e) => setState((s) => ({ ...s, birthDate: e.target.value }))}
-                                  className="w-full bg-surface-raised/50 border border-gold/10 rounded-xl px-6 py-4 text-lg text-text focus:outline-none focus:border-gold/40 transition-all shadow-inner"
+                                  className="w-full glass-input rounded-xl px-6 py-4 text-lg text-text"
                                 />
                               </div>
                               <div className="space-y-3">
@@ -489,7 +490,7 @@ export default function ReadingPage() {
                                   type="time"
                                   value={state.birthTime}
                                   onChange={(e) => setState((s) => ({ ...s, birthTime: e.target.value }))}
-                                  className="w-full bg-surface-raised/50 border border-gold/10 rounded-xl px-6 py-4 text-lg text-text focus:outline-none focus:border-gold/40 transition-all shadow-inner"
+                                  className="w-full glass-input rounded-xl px-6 py-4 text-lg text-text"
                                 />
                               </div>
                             </div>
@@ -500,7 +501,7 @@ export default function ReadingPage() {
                                 value={state.birthCity}
                                 onChange={(e) => setState((s) => ({ ...s, birthCity: e.target.value }))}
                                 placeholder="z.B. Berlin, Deutschland"
-                                className="w-full bg-surface-raised/50 border border-gold/10 rounded-xl px-6 py-4 text-lg text-text placeholder:text-text-muted focus:outline-none focus:border-gold/40 transition-all shadow-inner"
+                                className="w-full glass-input rounded-xl px-6 py-4 text-lg text-text"
                               />
                             </div>
                           </motion.div>
@@ -536,7 +537,7 @@ export default function ReadingPage() {
                       className="flex flex-col items-center gap-12 py-8"
                     >
                       <div className="text-center space-y-4">
-                        <h2 className="font-display text-4xl sm:text-5xl text-text">Das Energiefeld</h2>
+                        <h2 className="font-display text-4xl sm:text-5xl text-text heading-glow">Das Energiefeld</h2>
                         <p className="text-lg text-text-secondary max-w-xl mx-auto leading-relaxed">
                           Gleite durch das kosmische Feld und wähle drei Resonanzpunkte.
                           Jeder Punkt birgt eine Karte — vertraue deiner Intuition.
@@ -583,7 +584,7 @@ export default function ReadingPage() {
                         />
                       ) : (
                         <div className="h-[400px] flex items-center justify-center">
-                          <RefreshCw className="w-12 h-12 text-gold/20 animate-spin" />
+                          <CrystalSpinner label="Feld wird geladen..." />
                         </div>
                       )}
                     </motion.div>
@@ -679,7 +680,7 @@ export default function ReadingPage() {
                           </div>
                         ) : (
                           <div className="h-[320px] flex items-center justify-center">
-                             <RefreshCw className="w-16 h-16 text-gold/20 animate-spin" />
+                            <CrystalSpinner label="Karten werden offenbart..." />
                           </div>
                         )}
                       </div>
@@ -714,7 +715,7 @@ export default function ReadingPage() {
                       className="flex flex-col items-center justify-center py-32"
                     >
                       <CrystalShard variant="violet" synthesizing className="w-48 h-48 sm:w-56 sm:h-56 mb-16" />
-                      <h2 className="font-display text-3xl text-text mb-4 uppercase tracking-widest">Synthese läuft</h2>
+                      <h2 className="font-display text-3xl text-text mb-4 uppercase tracking-widest text-shadow-violet">Synthese läuft</h2>
                       <p className="text-xl text-text-secondary text-center max-w-md leading-relaxed font-serif italic">
                         Der Kristall bricht das Licht deiner Symbole in ein kohärentes Spiegelbild...
                       </p>
@@ -782,12 +783,12 @@ export default function ReadingPage() {
                                    msg.role === "user" ? "justify-end" : "justify-start"
                                  )}
                                >
-                                 <div className={cn(
-                                   "max-w-[80%] px-6 py-4 rounded-2xl",
-                                   msg.role === "user"
-                                     ? "bg-gold/10 border border-gold/20 text-text"
-                                     : "bg-surface-raised/40 border border-gold/10 text-text-secondary font-serif italic leading-[1.8]"
-                                 )}>
+                                <div className={cn(
+                                    "max-w-[80%] px-6 py-4 rounded-2xl glass-bubble",
+                                    msg.role === "user"
+                                      ? "glass-bubble-user text-text"
+                                      : "glass-bubble-ai text-text-secondary font-serif italic leading-[1.8]"
+                                  )}>
                                    {msg.role === "assistant" ? (
                                      <div className="space-y-3">
                                        {msg.content.split("\n").map((line, li) => {
@@ -802,23 +803,23 @@ export default function ReadingPage() {
                                </motion.div>
                              ))}
                              {state.followupLoading && (
-                               <div className="flex justify-start">
-                                 <div className="bg-surface-raised/40 border border-gold/10 px-6 py-4 rounded-2xl">
-                                   <RefreshCw className="w-5 h-5 text-gold/40 animate-spin" />
-                                 </div>
-                               </div>
-                             )}
+                                <div className="flex justify-start">
+                                  <div className="glass-bubble glass-bubble-ai px-6 py-4 rounded-2xl">
+                                    <RefreshCw className="w-5 h-5 text-violet/50 animate-spin" />
+                                  </div>
+                                </div>
+                              )}
                            </div>
 
                            <div className="flex gap-4">
                              <input
-                               type="text"
-                               value={state.followupQuestion}
-                               onChange={(e) => setState((s) => ({ ...s, followupQuestion: e.target.value, followupError: null }))}
-                               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && state.followupQuestion.trim().length >= 3 && !state.followupLoading && submitFollowup()}
-                               placeholder="Stelle eine Nachfrage..."
-                               className="flex-1 bg-surface-raised/20 border border-gold/10 rounded-full px-8 py-4 text-lg text-text focus:outline-none focus:border-gold/30 transition-all shadow-inner"
-                             />
+                                type="text"
+                                value={state.followupQuestion}
+                                onChange={(e) => setState((s) => ({ ...s, followupQuestion: e.target.value, followupError: null }))}
+                                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && state.followupQuestion.trim().length >= 3 && !state.followupLoading && submitFollowup()}
+                                placeholder="Stelle eine Nachfrage..."
+                                className="flex-1 glass-input rounded-full px-8 py-4 text-lg text-text"
+                              />
                              <Button
                                onClick={submitFollowup}
                                disabled={state.followupQuestion.trim().length < 3 || state.followupLoading}

@@ -28,7 +28,7 @@ export default function Home() {
           transition={{ delay: 0.5 }}
           className="text-4xl sm:text-7xl font-display font-semibold tracking-tight text-text leading-[1.1] max-w-3xl mb-6"
         >
-          <span className="text-gold italic font-medium">KI-Grimoire</span>
+          <span className="text-gold italic font-medium heading-glow">KI-Grimoire</span>
         </motion.h1>
 
         <motion.p 
@@ -80,8 +80,8 @@ export default function Home() {
               },
             ].map((feature, i) => (
               <Panel key={i} className="group hover:border-gold/30 transition-colors">
-                <div className="w-12 h-12 rounded-full border border-gold/20 flex items-center justify-center mb-6 text-gold group-hover:scale-110 transition-transform">
-                  {feature.icon}
+                <div className="w-12 h-12 rounded-xl rotate-45 border border-gold/20 flex items-center justify-center mb-6 text-gold group-hover:scale-110 group-hover:border-gold/40 group-hover:shadow-[0_0_16px_rgba(200,164,93,0.15)] transition-all">
+                  <div className="-rotate-45">{feature.icon}</div>
                 </div>
                 <h3 className="text-xl font-display text-text mb-4">{feature.title}</h3>
                 <p className="text-text-secondary leading-relaxed">
@@ -94,17 +94,19 @@ export default function Home() {
       </section>
 
       {/* Footer / Disclaimer */}
-      <footer className="px-4 py-16 text-center border-t border-gold/5 bg-bg/80">
+      <footer className="px-4 py-16 text-center border-t border-gold/5">
         <div className="mx-auto max-w-2xl">
           <div className="flex justify-center gap-6 mb-8 text-gold/40">
             <div className="w-[1px] h-12 bg-gradient-to-b from-transparent via-gold/20 to-transparent" />
             <Sparkles className="w-5 h-5" />
             <div className="w-[1px] h-12 bg-gradient-to-b from-transparent via-gold/20 to-transparent" />
           </div>
-          <p className="text-sm text-text-muted leading-relaxed mb-8">
-            ESO ist ein Werkzeug zur Selbsterkenntnis und Reflexion. Wir geben keine rechtlichen, 
-            medizinischen oder finanziellen Ratschläge. Deine Daten bleiben privat und verschlüsselt.
-          </p>
+          <div className="glass-panel rounded-2xl px-8 py-6 mb-8">
+            <p className="text-sm text-text-muted leading-relaxed">
+              ESO ist ein Werkzeug zur Selbsterkenntnis und Reflexion. Wir geben keine rechtlichen, 
+              medizinischen oder finanziellen Ratschläge. Deine Daten bleiben privat und verschlüsselt.
+            </p>
+          </div>
           <div className="flex flex-wrap justify-center gap-8 text-xs font-mono uppercase tracking-widest text-gold/60">
             <Link href="/readings" className="hover:text-gold transition-colors underline decoration-gold/20 underline-offset-4">Readings</Link>
             <Link href="#" className="hover:text-gold transition-colors underline decoration-gold/20 underline-offset-4">Datenschutz</Link>

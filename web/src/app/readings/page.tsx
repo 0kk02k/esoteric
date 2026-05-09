@@ -8,6 +8,7 @@ import { Button } from "@/components/Button";
 import SymbolChip from "@/components/SymbolChip";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Sparkles, Trash2, ChevronDown, ChevronUp, Calendar } from "lucide-react";
+import { CrystalSpinner } from "@/components/CrystalSpinner";
 
 type TarotDraw = {
   card: { name: string; element: string | null };
@@ -99,9 +100,8 @@ export default function ReadingsPage() {
         </header>
 
         {loading && (
-          <div className="flex flex-col items-center gap-4 py-20">
-             <div className="w-10 h-10 rounded-full border border-gold/20 animate-spin border-t-gold" />
-             <p className="text-xs font-mono text-gold/40 uppercase tracking-widest">Initialisiere Archiv...</p>
+          <div className="py-20">
+            <CrystalSpinner label="Initialisiere Archiv..." />
           </div>
         )}
 
