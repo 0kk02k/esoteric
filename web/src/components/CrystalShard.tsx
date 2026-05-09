@@ -44,8 +44,10 @@ export function CrystalShard({
 }: CrystalShardProps) {
   const isGold = variant === "gold";
 
-  const speed = synthesizing ? 0.7 : 2.5;
-  const orbitSpeed = synthesizing ? 1.0 : 4.0;
+  // Higher numbers = longer durations = slower, calmer movement
+  // Landing page (synthesizing) should be energetic but slow and majestic
+  const speed = synthesizing ? 3.0 : 5.0;
+  const orbitSpeed = synthesizing ? 6.0 : 10.0;
 
   const colors = isGold
     ? {
