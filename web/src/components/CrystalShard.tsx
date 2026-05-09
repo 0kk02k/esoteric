@@ -44,7 +44,8 @@ export function CrystalShard({
 }: CrystalShardProps) {
   const isGold = variant === "gold";
 
-  const speed = synthesizing ? 0.5 : 1;
+  const speed = synthesizing ? 1.5 : 2.5;
+  const orbitSpeed = synthesizing ? 2.0 : 4.0;
 
   const colors = isGold
     ? {
@@ -352,7 +353,7 @@ export function CrystalShard({
           key={`orbit-${i}`}
           animate={{ rotate: orb.orbitDir * 360 }}
           transition={{
-            duration: orb.duration * speed,
+            duration: orb.duration * orbitSpeed,
             repeat: Infinity,
             ease: "linear" as const,
           }}
@@ -363,7 +364,7 @@ export function CrystalShard({
           <motion.div
             animate={{ rotate: orb.rotateSpeed > 0 ? 360 : -360 }}
             transition={{
-              duration: Math.abs(orb.rotateSpeed) * speed,
+              duration: Math.abs(orb.rotateSpeed) * speed * 2,
               repeat: Infinity,
               ease: "linear" as const,
             }}
