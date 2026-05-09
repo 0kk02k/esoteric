@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/Button";
 import { Panel } from "@/components/Panel";
+import { CrystalShard } from "@/components/CrystalShard";
 import { Sparkles, Compass, Cpu, ArrowRight } from "lucide-react";
 
 export default function Home() {
@@ -11,33 +12,14 @@ export default function Home() {
     <div className="flex flex-col flex-1">
       {/* Hero Section */}
       <section className="relative flex flex-col items-center justify-center flex-1 px-4 pt-20 pb-16 sm:pt-32 sm:pb-24 text-center overflow-hidden">
-        {/* Kinetic Hero Element */}
+        {/* Kinetic Hero Element — Fractured Crystal Prism */}
         <motion.div 
-          initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1.5, ease: "easeOut" }}
-          className="relative w-32 h-32 sm:w-48 sm:h-48 mb-12"
+          className="mb-12"
         >
-          <div className="absolute inset-0 border-2 border-gold/20 rounded-full animate-[spin_20s_linear_infinite]" />
-          <div className="absolute inset-4 border border-gold/40 rounded-full animate-[spin_15s_linear_infinite_reverse]" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Sparkles className="w-10 h-10 sm:w-16 sm:h-16 text-gold drop-shadow-[0_0_15px_rgba(200,164,93,0.5)]" />
-          </div>
-          
-          {/* Orbital Dots */}
-          {[...Array(3)].map((_, i) => (
-            <motion.div
-              key={i}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 10 + i * 5, repeat: Infinity, ease: "linear" }}
-              className="absolute inset-0"
-            >
-              <div 
-                className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-gold shadow-[0_0_10px_rgba(200,164,93,0.8)]" 
-                style={{ top: i * 15 + '%' }}
-              />
-            </motion.div>
-          ))}
+          <CrystalShard variant="gold" className="w-36 h-36 sm:w-52 sm:h-52" />
         </motion.div>
 
         <motion.h1 

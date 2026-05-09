@@ -11,6 +11,7 @@ import SymbolChip from "@/components/SymbolChip";
 import { Panel } from "@/components/Panel";
 import { Button } from "@/components/Button";
 import { KineticBlueprint } from "@/components/KineticBlueprint";
+import { CrystalShard } from "@/components/CrystalShard";
 import { Sparkles, ArrowLeft, RefreshCw, X, Info, LayoutGrid, MessageSquare } from "lucide-react";
 import type { ReadingResponse } from "@/lib/ai";
 import type { ChartResponse } from "@/lib/astrology";
@@ -712,16 +713,10 @@ export default function ReadingPage() {
                       exit={{ opacity: 0 }}
                       className="flex flex-col items-center justify-center py-32"
                     >
-                      <div className="relative w-48 h-48 mb-16">
-                         <div className="absolute inset-0 border-2 border-violet/10 rounded-full animate-[spin_6s_linear_infinite]" />
-                         <div className="absolute inset-8 border border-violet/30 rounded-full animate-[spin_4s_linear_infinite_reverse]" />
-                         <div className="absolute inset-0 flex items-center justify-center">
-                            <Sparkles className="w-12 h-12 text-violet animate-pulse" />
-                         </div>
-                      </div>
+                      <CrystalShard variant="violet" className="w-48 h-48 sm:w-56 sm:h-56 mb-16" />
                       <h2 className="font-display text-3xl text-text mb-4 uppercase tracking-widest">Synthese läuft</h2>
                       <p className="text-xl text-text-secondary text-center max-w-md leading-relaxed font-serif italic">
-                        KI verwebt die symbolischen Fäden deiner Auswahl zu einem kohärenten Spiegelbild...
+                        Der Kristall bricht das Licht deiner Symbole in ein kohärentes Spiegelbild...
                       </p>
                     </motion.div>
                   )}

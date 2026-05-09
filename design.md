@@ -713,6 +713,63 @@ Das Design ist erfolgreich, wenn:
 
 ---
 
+## Zentrales Symbol: Fractured Crystal Prism (Implementiert)
+
+Das zentrale visuelle Element auf Startseite und waehrend der KI-Synthese ist ein **zerbrochener Kristall-Prisma** (Komponente: `CrystalShard.tsx`).
+
+### Beschreibung
+
+Ein vertikal schwebendes Prisma, zusammengesetzt aus 4 semi-transparenten Fragmenten, die leicht versetzt schweben. Jedes Fragment hat eine eigene Glasflaechen-Aesthetik (`backdrop-filter`) und rotiert sanft um eine gemeinsame Achse, aber nicht synchron. Die Zwischenraeume zwischen den Fragmenten leuchten in der Akzentfarbe (Gold auf Startseite, Violett bei Synthese). Kristallstaub-Partikel driften langsam nach aussen und verblassen.
+
+### Varianten
+
+| Variant | Verwendung | Farbpalette |
+|---------|-----------|-------------|
+| `gold` | Startseite Hero | Gold-Glow, goldene Kanten, goldene Orbitale |
+| `violet` | Synthese/Generating-Step | Violetter Glow, violette Kanten, violetter Kern |
+
+### Designprinzipien des Symbols
+
+- Kristallin aber nicht materiell — schwebt, reflektiert, bricht Licht
+- Pulsierender Kern signalisiert Aktivitaet/Energie
+- Orbitalringe und Staubpartikel erzeugen kosmische Tiefe
+- Fragmente rotieren asynchron → "lebendig, aber nicht chaotisch"
+- Keine fuellenden Flaechen, nur andeutende Geometrie
+
+---
+
+## Zentrales Symbol: Verworfene Alternativen (Fuer Spaetere Iteration)
+
+### Alternative A: Aetherischer Kristall-Polyeder (Rotating Icosahedron)
+
+Ein stilisierter Ikosaeder (20-Flaechen-Koerper) aus feinen, leuchtenden Wireframe-Kanten — keine gefuellten Flaechen, nur Linien. Leichter innerer Glow. Die Struktur rotiert langsam in 3D und pulsiert rhythmisch (Skalierung + Opacity der Linien).
+
+**Staerken:**
+- Starker kristalliner Charakter
+- Hohe Wiedererkennung als "heilige Geometrie"
+- Technisch per SVG + CSS 3D-Transforms realisierbar (12 Vertices, 30 Kanten als `<line>`-Elemente)
+
+**Orbitale Elemente:** 3 leuchtende Punkte umkreisen den Polyeder auf elliptischen Bahnen (verschiedene Ebenen).
+
+**Denkbar fuer:** Premium-Variante, alternative Landing-Page, Account-Level-Visualisierung.
+
+### Alternative B: Aetherischer Energienexus (Converging Light Streams)
+
+Kein festes Objekt im Zentrum, sondern 5-7 konvergierende Lichtfaeden (gebogene Linien) die spiralfoermig in einen leuchtenden zentralen Punkt fliessen. Die Stroeme pulsieren: ihre Dicke und Helligkeit variiert wellenfoermig vom Rand zum Zentrum. Im Kern ein intensiver, aber weicher Glow-Punkt der rhythmisch atmet.
+
+**Staerken:**
+- Maximale Aetheriats-Wirkung — reine Energie ohne physische Form
+- Erinnert an Gravitationslinsen-Effekte oder eine Energiequelle die Kraefte aus dem Kosmos anzieht
+- Extrem hohe Differenzierung am Markt
+
+**Technik:** SVG `<path>` mit quadratischen Bezier-Kurven, animiert mit `stroke-dashoffset` fuer den Fluss-Effekt. Optional: SVG Turbulence-Filter.
+
+**Orbitale Elemente:** Die konvergierenden Stroeme ersetzen diskrete Punkte. 2-3 hellere Knoten bewegen sich sichtbar auf den Bahnen.
+
+**Denkbar fuer:** Synthese-/Loading-Animation in spaeterer Iteration, Premium-Report-Header, kosmische Hintergrund-Dekoration.
+
+---
+
 ## Fazit
 
 ESO sollte als `The Digital Grimoire` gestaltet werden: ein dunkles, hochwertiges, editorial-mystisches Interface mit goldener Tarot-Symbolik, klarer mobiler Nutzerfuehrung und transparent abgegrenzter KI-Deutung.
