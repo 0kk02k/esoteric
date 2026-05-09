@@ -713,28 +713,170 @@ Das Design ist erfolgreich, wenn:
 
 ---
 
-## Zentrales Symbol: Fractured Crystal Prism (Implementiert)
+## Zentrales Symbol: Floating Crystal Shards (Implementiert, v3)
 
-Das zentrale visuelle Element auf Startseite und waehrend der KI-Synthese ist ein **zerbrochener Kristall-Prisma** (Komponente: `CrystalShard.tsx`).
+Das zentrale visuelle Element auf Startseite und waehrend der KI-Synthese ist eine **Formation schwebender kristalliner Scherben** (Komponente: `CrystalShard.tsx`).
 
 ### Beschreibung
 
-Ein vertikal schwebendes Prisma, zusammengesetzt aus 4 semi-transparenten Fragmenten, die leicht versetzt schweben. Jedes Fragment hat eine eigene Glasflaechen-Aesthetik (`backdrop-filter`) und rotiert sanft um eine gemeinsame Achse, aber nicht synchron. Die Zwischenraeume zwischen den Fragmenten leuchten in der Akzentfarbe (Gold auf Startseite, Violett bei Synthese). Kristallstaub-Partikel driften langsam nach aussen und verblassen.
+5 elongierte, prismatische Glasfragmente schweben in einer vertikalen Zickzack-Anordnung. Jede Scherbe hat eine iriszierende Glasoberflaeche mit mehreren Gradient-Layern die Lichtbrechung simulieren. Ein zentraler Binding-Glow (kein diskreter Lichtpunkt) haelt die Formation zusammen. Energie-Pulse wandern langsam entlang der Scherbenkanten — teils clockwise, teils counter-clockwise. 8 kleine Kristallfragmente umkreisen das Konstrukt auf weiten Orbits in verschiedenen Richtungen und Geschwindigkeiten. Dezente Debris-Partikel driften nach aussen.
 
 ### Varianten
 
 | Variant | Verwendung | Farbpalette |
 |---------|-----------|-------------|
-| `gold` | Startseite Hero | Gold-Glow, goldene Kanten, goldene Orbitale |
-| `violet` | Synthese/Generating-Step | Violetter Glow, violette Kanten, violetter Kern |
+| `gold` | Startseite Hero | Warmer Binding-Glow, kuehl-blaeuliche Glasfarbe, gold-warme Kanten-Pulse |
+| `violet` | Synthese/Generating-Step | Violetter Binding-Glow, blau-violette Glasfarbe, violette Kanten-Pulse |
+
+### Props
+
+| Prop | Typ | Default | Beschreibung |
+|------|-----|---------|-------------|
+| `variant` | `"gold" \| "violet"` | `"gold"` | Farbschema |
+| `synthesizing` | `boolean` | `false` | Erhoehte Aktivitaet: schnellere Bewegung, mehr Pulse, violetter Glow-Layer |
+| `className` | `string` | — | Tailwind Size/Spacing-Klassen |
+
+### Synthesizing-Modus
+
+Wenn `synthesizing={true}`:
+- Speed-Multiplikator 0.5× (alles doppelt so schnell)
+- Float-Amplitude der Scherben × 2.2
+- Rotations-Amplitude × 2.5
+- Scale-Pulsation 1.04× statt statisch
+- 4 Kanten-Pulse pro Scherbe statt 2 (je 2 CW + 2 CCW)
+- Zusaetzlicher violetter Glow-Layer (`rgba(140,80,255,0.3)`) pulsiert mit Scale
+- 14 statt 8 Debris-Partikel
+- Binding-Glow deutlich intensiver
 
 ### Designprinzipien des Symbols
 
 - Kristallin aber nicht materiell — schwebt, reflektiert, bricht Licht
-- Pulsierender Kern signalisiert Aktivitaet/Energie
-- Orbitalringe und Staubpartikel erzeugen kosmische Tiefe
-- Fragmente rotieren asynchron → "lebendig, aber nicht chaotisch"
-- Keine fuellenden Flaechen, nur andeutende Geometrie
+- Kein zentraler Lichtpunkt — stattdessen diffuser Binding-Glow der alles zusammenhaelt
+- Energie fliesst entlang der Scherbenkanten, nicht als separate Blitze
+- Orbiting Mini-Shards erzeugen kosmische Tiefe und Dynamik
+- Fragmente schweben asynchron → "lebendig, aber nicht chaotisch"
+- Intro-Animation via Framer Motion Variants (einmalig, kein Re-Fade)
+- Aktivitaetslevel skaliert mit dem semantischen Zustand (ruhig = Landing, aktiv = Synthese)
+
+### Technische Umsetzung
+
+- SVG `pathLength` + `pathOffset` Animation fuer Kanten-Energie
+- Framer Motion `variants` mit `staggerChildren` fuer einmaligen Intro
+- CSS `clip-path: polygon(...)` fuer Scherbenformen
+- Mehrlagige Gradient-Layer fuer Irideszenz-Effekt
+- `transform: rotate()` auf Container-Ebene fuer Orbits
+
+---
+
+## Design System: Crystalline UI Components (Implementiert)
+
+Das gesamte UI wurde auf eine einheitliche kristalline Designsprache gehoben, die zum CrystalShard-Zentrum passt.
+
+### 1. StepIndicator — "Faceted Crystal Path"
+
+**Datei:** `src/components/StepIndicator.tsx`
+
+Ersetzt generische Kreise durch 45°-rotierte Diamantformen:
+- **Aktiver Step:** Pulsierender `box-shadow` Glow, 1.6× Scale, `text-shadow-gold` auf Label
+- **Completed Steps:** Gefuellter Glaseffekt mit Gradient-Overlay
+- **Connector-Linien:** Gradient-basiert mit wanderndem Energie-Pulse (nur bei completed)
+- **Inactive Steps:** Subtiler `surface-raised` Fill mit kaum sichtbarer Border
+
+### 2. Glass Inputs — "Glass Vessels"
+
+**CSS-Klasse:** `.glass-input` (in `globals.css`)
+
+Alle Formular-Inputs (textarea, date, time, text, follow-up) nutzen:
+- `backdrop-blur(4px)` fuer Glaseffekt
+- Subtile `border-top-color: rgba(255,255,255,0.06)` fuer Lichtkante
+- Mehrlagiger `box-shadow`: innerer Schatten + aeusserer Glow
+- Focus-State: Goldener Glow-Ring mit 3 Shadow-Layern, weicher Uebergang
+- Kein harter `outline`, stattdessen `border-color` Transition
+
+### 3. Kategorie-Buttons — "Crystal Chips"
+
+**CSS-Klassen:** `.crystal-chip` / `.crystal-chip-active` (in `globals.css`)
+
+Facettierte Chips statt generische Pills:
+- Basis: `backdrop-blur(4px)`, dunkler Glass-Fill, subtile Border
+- Hover: `::before` Pseudo-Element mit diagonalem Refraktions-Sweep
+- Active: Innerer Gold-Glow + aeusserer Glow + verstaerkte Border
+- `rounded-xl` statt `rounded-full` fuer kantigeren kristallinen Charakter
+
+### 4. CrystalSpinner — "Crystallizing Indicator"
+
+**Datei:** `src/components/CrystalSpinner.tsx`
+
+Ersetzt alle generischen `animate-spin` Border-Spinner:
+- 4 kleine Diamant-Shards auf verschiedenen Orbits
+- 2 Shards clockwise, 2 counter-clockwise (CSS-only `@keyframes`)
+- Zentraler pulsierender Diamant-Punkt (`crystal-pulse` Keyframe)
+- Optional: `label`-Prop fuer Statustext darunter
+- Verwendet in: Stellar-Field-Loading, Card-Reveal-Loading, Archiv-Loading
+
+### 5. Chat Bubbles — "Glass Dialogue"
+
+**CSS-Klassen:** `.glass-bubble` / `.glass-bubble-user` / `.glass-bubble-ai` (in `globals.css`)
+
+Follow-up Chat-Nachrichten mit Glasmorphismus:
+- **User-Bubbles:** Gold-getoentes Glas mit innerem Gold-Glow
+- **AI-Bubbles:** Violet-getoentes Glas mit seitlichem Violet-Glow (links)
+- Beide: `backdrop-blur(6px)`, top-border Licht-Catch, weicher Shadow
+
+### 6. Headlines — "Luminous Type"
+
+**CSS-Klassen:** `.heading-glow` / `.text-shadow-gold` / `.text-shadow-violet`
+
+Wichtige Headlines erhalten dezenten Text-Shadow:
+- `.heading-glow`: Gold-Glow + dunkler Text-Shadow fuer Tiefe
+- `.text-shadow-gold`: Fuer aktive Labels (StepIndicator)
+- `.text-shadow-violet`: Fuer Synthese-Phase Headlines
+- Landing-Titel "KI-Grimoire" mit `heading-glow`
+
+### 7. Background — Enhanced `bg-celestial`
+
+Erweiterte Hintergrund-Textur:
+- Basis: Grid-Pattern (40×40px) mit reduzierter Opacity (0.08 statt 0.1)
+- Neu: Subtiler violetter Radial-Gradient oben-links (`rgba(124,92,255,0.03)`)
+- Neu: Subtiler goldener Radial-Gradient unten-rechts (`rgba(200,164,93,0.02)`)
+- Erzeugt lebendigeren Hintergrund ohne Ablenkung
+
+### 8. Feature-Icons — Rotierte Diamanten
+
+Landing-Page Feature-Grid Icons:
+- `rounded-xl rotate-45` statt `rounded-full`
+- Icon-Content via `-rotate-45` zurueckgedreht
+- Hover: Scale + verstaerkte Border + goldener Glow-Shadow
+
+### 9. Footer — Glass Panel
+
+Landing-Page Disclaimer:
+- In `glass-panel rounded-2xl` gewickelt statt nackter Text
+- Gibt dem Footer visuelles Gewicht und integriert ihn ins Glasdesign
+
+### CSS-Utilities Referenz (globals.css)
+
+| Klasse | Zweck |
+|--------|-------|
+| `.glass-input` | Formular-Inputs mit Glas-Aesthetik |
+| `.crystal-chip` | Basis-Button im Kristall-Stil |
+| `.crystal-chip-active` | Aktiver Zustand des Crystal-Chips |
+| `.glass-bubble` | Basis Chat-Bubble |
+| `.glass-bubble-user` | User-Nachricht (Gold) |
+| `.glass-bubble-ai` | AI-Nachricht (Violet) |
+| `.heading-glow` | Gold Text-Shadow fuer Headlines |
+| `.text-shadow-gold` | Kompakter Gold-Glow |
+| `.text-shadow-violet` | Kompakter Violet-Glow |
+| `.shimmer` | Animierter Shimmer-Hintergrund (fuer Loading-Skelette) |
+
+### Keyframes (globals.css)
+
+| Keyframe | Zweck |
+|----------|-------|
+| `shimmer` | Horizontaler Gradient-Sweep (3s loop) |
+| `crystal-orbit` | 360° Rotation clockwise |
+| `crystal-orbit-reverse` | 360° Rotation counter-clockwise |
+| `crystal-pulse` | Opacity + Scale Pulsation auf Diamant-Punkt |
 
 ---
 
