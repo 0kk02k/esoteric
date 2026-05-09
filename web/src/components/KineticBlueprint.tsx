@@ -89,7 +89,7 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
                       </SymbolChip>
                     )}
                   </div>
-                  <div className="text-text-secondary text-xl leading-[1.8] font-serif italic border-l border-gold/10 pl-6">
+                  <div className="text-text-secondary text-xl sm:text-2xl leading-[1.7] font-serif italic border-l border-gold/10 pl-6">
                     {stripMarkdown(cardBody)}
                   </div>
                 </div>
@@ -124,7 +124,7 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 2, delay: 0.6 }}
-            className="text-text-secondary text-xl leading-[1.8] font-serif italic border-l border-gold/10 pl-6"
+            className="text-text-secondary text-xl sm:text-2xl leading-[1.7] font-serif italic border-l border-gold/10 pl-6"
           >
             {body.split("\n").map((line, i) => {
               const trimmed = line.trim();

@@ -43,18 +43,34 @@
   --color-blueprint: var(--color-blueprint);
   --color-text-secondary: var(--color-text-secondary);
   --color-text-muted: var(--color-text-muted);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-geist);
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-fraunces);
+  --font-display: var(--font-cormorant);
+  --font-serif: var(--font-cormorant);
 }
 
 body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans), system-ui, sans-serif;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.font-serif {
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+}
+
+.font-mono {
+  letter-spacing: 0.05em;
 }
 
 /* Celestial Engine Background Pattern — with noise/caustic texture */

@@ -3,6 +3,9 @@ import prisma from "@/lib/db";
 import { generateReading } from "@/lib/ai";
 import type { TarotCard as AITarotCard } from "@/lib/ai";
 import type { ChartResult } from "@/lib/astrology";
+import { checkUsageLimit, incrementUsageCount } from "@/lib/usage-limits";
+import { auth } from "@/auth";
+import { logger } from "@/lib/logger";
 
 export async function POST(
   request: NextRequest,
@@ -10,6 +13,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    logger.info("ai", "Starting reading generation", { readingId: id });
+    const session = await auth();
+    const userId = session?.user?.id;
 
     const reading = await prisma.reading.findUnique({
       where: { id },
@@ -27,6 +33,23 @@ export async function POST(
       return NextResponse.json(
         { error: "Reading already completed" },
         { status: 409 },
+      );
+    }
+
+    // Check usage limits
+    const limitCheck = await checkUsageLimit({
+      userId,
+      sessionToken: reading.sessionToken ?? undefined,
+    });
+
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: "Daily limit reached",
+          readingsRemaining: limitCheck.readingsRemaining,
+          resetAt: limitCheck.resetAt,
+        },
+        { status: 429 },
       );
     }
 
@@ -85,8 +108,25 @@ export async function POST(
       },
     });
 
+    // Increment usage count after successful generation
+    await incrementUsageCount({
+      userId,
+      sessionToken: reading.sessionToken ?? undefined,
+    });
+
+    logger.info("ai", "Reading generation successful", {
+      readingId: id,
+      model: result.model,
+      tokensUsed: result.tokensUsed,
+      latencyMs: result.latencyMs,
+    });
+
     return NextResponse.json(result);
   } catch (error) {
+    logger.error("ai", "Reading generation failed", {
+      readingId: (await params).id,
+      error: error instanceof Error ? error.message : String(error),
+    });
     console.error("Error generating reading:", error);
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: message }, { status: 500 });

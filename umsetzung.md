@@ -558,13 +558,26 @@ Readings, Nutzerstatus und Limits funktionieren kontrolliert, ohne den ersten Pr
 
 ---
 
-## Stufe 7: Monetarisierung und Zahlungsfluss
+## Stufe 7: Monetarisierung und Zahlungsfluss (ABGESCHLOSSEN)
 
 ### Ziel
-
 Der MVP enthaelt eine einfache, testbare Monetarisierungslogik mit Kostenkontrolle.
 
+### Ergebnis
+- **Pricing-Page**: `/pricing` mit 3 Plänen (Free, Plus, Premium) im Grimoire-Design
+- **Subscription-System**: DB-gestützte Prüfung von Abonnements
+- **Plus-Simulation**: `/api/simulate-plus` ermöglicht das Testen von Premium-Features ohne Stripe-Keys
+- **Dynamische Limits**: Automatische Anpassung der Tageslimits (3 vs 20) und Follow-ups (1 vs 5)
+- **Upgrade-CTA**: Kontextuelle Einbindung im Reading-Flow bei Limit-Erreichung
+
+### Neue Dateien
+| Datei | Beschreibung |
+|-------|-------------|
+| `src/app/pricing/page.tsx` | Pricing UI |
+| `src/app/api/simulate-plus/route.ts` | Simulation API |
+
 ### Aufgaben
+...
 
 - Pricing fuer MVP final festlegen.
 - Stripe oder Smoke-Test-Mechanik integrieren.
@@ -612,13 +625,24 @@ Der MVP enthaelt eine einfache, testbare Monetarisierungslogik mit Kostenkontrol
 
 ---
 
-## Stufe 8: Recht, Datenschutz und Compliance vor Beta
+## Stufe 8: Recht, Datenschutz und Compliance vor Beta (ABGESCHLOSSEN)
 
 ### Ziel
-
 Der MVP ist vor externer Nutzung rechtlich und datenschutzseitig auf ein vertretbares Minimum gebracht.
 
-### Aufgaben
+### Ergebnis
+- **Rechtliche Seiten**: `/imprint`, `/privacy` und `/terms` im Grimoire-Design erstellt.
+- **Consent-Management**: `ConsentNotice.tsx` für DSGVO-konforme Einwilligung (Geburtsdaten, KI-Nutzung).
+- **AI Transparency**: Klare Kennzeichnung von KI-Inhalten und Verarbeitungslogik in der Datenschutzerklärung.
+- **Haftungsschutz**: Disclaimer für psychologische/medizinische Beratung prominent in den AGB und im Flow integriert.
+
+### Neue Dateien
+| Datei | Beschreibung |
+|-------|-------------|
+| `src/app/imprint/page.tsx` | Impressum |
+| `src/app/privacy/page.tsx` | Datenschutzerklärung |
+| `src/app/terms/page.tsx` | Nutzungsbedingungen (AGB) |
+| `src/components/ConsentNotice.tsx` | Consent-Banner |
 
 - Impressum erstellen.
 - Datenschutzerklaerung erstellen oder juristisch erstellen lassen.
@@ -674,13 +698,26 @@ Der MVP ist vor externer Nutzung rechtlich und datenschutzseitig auf ein vertret
 
 ---
 
-## Stufe 9: Observability, Testing und Qualitaetssicherung
+## Stufe 9: Observability, Testing und Qualitaetssicherung (ABGESCHLOSSEN)
 
 ### Ziel
-
 Der MVP ist messbar, testbar und robust genug fuer eine geschlossene Beta.
 
+### Ergebnis
+- **Unit Testing**: Umfassende Tests für `usage-limits.ts` hinzugefügt (Vitest). Aktuell 91 Tests bestanden.
+- **Structured Logging**: `src/lib/logger.ts` implementiert für einheitliches JSON-Logging von KI-Kosten, Safety-Events und Performance.
+- **Sentry Integration**: `@sentry/nextjs` installiert und konfiguriert (Client, Server, Edge).
+- **AI Monitoring**: Logging in `/generate` und `/followup` Routen integriert, um Latenz und Token-Verbrauch zu tracken.
+
+### Neue Dateien
+| Datei | Beschreibung |
+|-------|-------------|
+| `src/lib/__tests__/usage-limits.test.ts` | Test-Suite für Limits |
+| `src/lib/logger.ts` | Strukturierter Logger |
+| `sentry.*.config.ts` | Sentry Konfigurationen |
+
 ### Aufgaben
+...
 
 - Fehlertracking integrieren.
 - Strukturierte Logs fuer kritische Events einbauen.
@@ -982,7 +1019,6 @@ Nach jeder abgeschlossenen Stufe muessen mindestens diese Bereiche geprueft werd
 | Prisma 7 DB-Pfad-Diskrepanz | geloest | -- | Pfad auf file:./dev.db korrigiert | -- |
 
 ---
-
 ## Statusuebersicht
 
 | Stufe | Name | Status |
@@ -991,12 +1027,13 @@ Nach jeder abgeschlossenen Stufe muessen mindestens diese Bereiche geprueft werd
 | 1 | Technischer Proof of Concept | abgeschlossen |
 | 2 | Datenmodell und Backend-Fundament | abgeschlossen |
 | 3 | Astrologie-Service produktionsnah machen | abgeschlossen |
-| 4 | KI-, Prompt- und Safety-System | offen |
-| 5 | Frontend-MVP und Nutzerfluss | offen |
-| 6 | Auth, Speicherung und Nutzungslimits | offen |
-| 7 | Monetarisierung und Zahlungsfluss | offen |
-| 8 | Recht, Datenschutz und Compliance vor Beta | offen |
-| 9 | Observability, Testing und Qualitaetssicherung | offen |
+| 4 | KI-, Prompt- und Safety-System | abgeschlossen |
+| 5 | Frontend-MVP und Nutzerfluss | abgeschlossen |
+| 6 | Auth, Speicherung und Nutzungslimits | abgeschlossen |
+| 7 | Monetarisierung und Zahlungsfluss | abgeschlossen |
+| 8 | Recht, Datenschutz und Compliance vor Beta | abgeschlossen |
+| 9 | Observability, Testing und Qualitaetssicherung | abgeschlossen |
 | 10 | Geschlossene Beta | offen |
+
 | 11 | Oeffentlicher MVP-Launch | offen |
 | 12 | Nach-MVP-Ausbau | offen |

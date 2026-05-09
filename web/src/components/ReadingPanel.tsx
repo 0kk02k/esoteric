@@ -39,7 +39,7 @@ export default function ReadingPanel({
             <span className="text-sm font-mono text-violet/60 uppercase tracking-widest">Synthetisiere...</span>
           </div>
         ) : (
-          <div className="text-text-secondary text-lg leading-relaxed whitespace-pre-wrap font-serif">
+          <div className="text-text-secondary text-xl sm:text-2xl leading-[1.7] whitespace-pre-wrap font-serif">
             {children}
           </div>
         )}

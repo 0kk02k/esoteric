@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import { checkUsageLimit, incrementUsageCount } from "@/lib/usage-limits";
+import { auth } from "@/auth";
+import { logger } from "@/lib/logger";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -18,6 +21,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    logger.info("ai", "Starting follow-up generation", { readingId: id });
+    const session = await auth();
+    const userId = session?.user?.id;
     const body = await request.json();
     const { question, sessionToken, history } = body as {
       question: string;
@@ -48,6 +54,24 @@ export async function POST(
       return NextResponse.json(
         { error: "Reading must be completed before follow-up" },
         { status: 409 },
+      );
+    }
+
+    // Check usage limits for follow-up
+    const limitCheck = await checkUsageLimit(
+      { userId, sessionToken: sessionToken || reading.sessionToken || undefined },
+      "followup"
+    );
+
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: "Follow-up limit reached",
+          readingsRemaining: limitCheck.readingsRemaining,
+          followupsRemaining: limitCheck.followupsRemaining,
+          resetAt: limitCheck.resetAt,
+        },
+        { status: 429 },
       );
     }
 
@@ -111,8 +135,20 @@ export async function POST(
       data: { contextJson: JSON.stringify(updatedContext) },
     });
 
+    // Increment follow-up usage count
+    await incrementUsageCount(
+      { userId, sessionToken: sessionToken || reading.sessionToken || undefined },
+      "followup"
+    );
+
+    logger.info("ai", "Follow-up generation successful", { readingId: id });
+
     return NextResponse.json({ text });
   } catch (error) {
+    logger.error("ai", "Follow-up generation failed", {
+      readingId: (await params).id,
+      error: error instanceof Error ? error.message : String(error),
+    });
     console.error("Error generating follow-up:", error);
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: message }, { status: 500 });

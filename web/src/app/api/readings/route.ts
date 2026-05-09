@@ -25,12 +25,13 @@ export async function POST(request: NextRequest) {
     const identifier = userId ? { userId } : { sessionToken: sessionToken || undefined };
 
     // Check usage limits
-    const { allowed, readingsRemaining } = await checkUsageLimit(identifier);
-    if (!allowed) {
+    const limitCheck = await checkUsageLimit(identifier);
+    if (!limitCheck.allowed) {
       return NextResponse.json(
         {
           error: "Daily reading limit reached",
-          readingsRemaining,
+          readingsRemaining: limitCheck.readingsRemaining,
+          resetAt: limitCheck.resetAt,
         },
         { status: 429 }
       );
@@ -111,22 +112,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Increment usage count
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    await prisma.usageLimit.updateMany({
-      where: {
-        userId,
-        sessionToken: userId ? null : (sessionToken ?? undefined),
-        periodStart: today,
-        periodEnd: tomorrow,
-      },
-      data: {
-        readingsCount: { increment: 1 },
-      },
-    });
+    await incrementUsageCount(identifier);
 
     return NextResponse.json(reading, { status: 201 });
   } catch (error) {

@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter, Geist_Mono } from "next/font/google";
+import { Cormorant_Garamond, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CelestialBackground } from "@/components/CelestialBackground";
 import { UserAuth } from "@/components/UserAuth";
+import { ConsentNotice } from "@/components/ConsentNotice";
 
-const fraunces = Fraunces({
+const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  variable: "--font-fraunces",
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-cormorant",
   display: "swap",
 });
 
-const inter = Inter({
+const geist = Geist({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-geist",
   display: "swap",
 });
 
@@ -33,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de" className={`${fraunces.variable} ${inter.variable} ${geistMono.variable}`}>
+    <html lang="de" className={`${cormorant.variable} ${geist.variable} ${geistMono.variable}`}>
       <body className="antialiased min-h-screen flex flex-col selection:bg-gold/30 selection:text-gold">
         <CelestialBackground />
         <div className="absolute top-0 right-0 p-4 sm:p-6 z-50">
@@ -42,6 +44,7 @@ export default function RootLayout({
         <main className="flex-1 flex flex-col relative z-10">
           {children}
         </main>
+        <ConsentNotice />
       </body>
     </html>
   );

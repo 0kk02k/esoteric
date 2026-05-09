@@ -340,10 +340,37 @@ export default function ReadingPage() {
                  exit={{ opacity: 0, height: 0 }}
                  className="lg:col-span-12"
                >
-                 <Panel className="border-danger-muted/40 bg-danger-muted/5">
-                   <div className="flex items-start gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-danger-muted mt-1.5 shrink-0" />
-                      <p className="text-sm text-danger-muted font-mono leading-relaxed">{state.error}</p>
+                 <Panel className={cn(
+                   "border-danger-muted/40 bg-danger-muted/5",
+                   state.error.includes("Tageslimit") && "border-gold/30 bg-gold/5"
+                 )}>
+                   <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                      <div className="flex items-start gap-3">
+                         <div className={cn(
+                           "w-1.5 h-1.5 rounded-full mt-1.5 shrink-0",
+                           state.error.includes("Tageslimit") ? "bg-gold shadow-[0_0_8px_rgba(200,164,93,0.6)]" : "bg-danger-muted"
+                         )} />
+                         <div className="space-y-1">
+                            <p className={cn(
+                              "text-sm font-mono leading-relaxed",
+                              state.error.includes("Tageslimit") ? "text-gold" : "text-danger-muted"
+                            )}>{state.error}</p>
+                            {state.error.includes("Tageslimit") && (
+                              <p className="text-[10px] text-text-muted uppercase tracking-widest">
+                                Schalte mehr Tiefe und tägliche Readings frei.
+                              </p>
+                            )}
+                         </div>
+                      </div>
+                      
+                      {state.error.includes("Tageslimit") && (
+                        <Link href="/pricing">
+                          <Button variant="secondary" className="h-10 px-6 text-xs whitespace-nowrap group">
+                            Plus entdecken
+                            <ArrowRight className="w-3.5 h-3.5 ml-2 group-hover:translate-x-1 transition-transform" />
+                          </Button>
+                        </Link>
+                      )}
                    </div>
                  </Panel>
                </motion.div>
