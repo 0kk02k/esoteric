@@ -24,23 +24,31 @@ export function proxy(request: NextRequest) {
   cleanup();
 
   const now = Date.now();
-  const entry = store.get(ip);
+  let entry = store.get(ip);
 
   if (!entry || entry.resetAt < now) {
-    store.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return NextResponse.next();
+    entry = { count: 0, resetAt: now + WINDOW_MS };
+    store.set(ip, entry);
   }
 
   entry.count++;
 
-  if (entry.count > MAX_REQUESTS) {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429 },
-    );
-  }
+  const remaining = Math.max(0, MAX_REQUESTS - entry.count);
+  const reset = entry.resetAt;
 
-  return NextResponse.next();
+  const response = entry.count > MAX_REQUESTS
+    ? NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 },
+      )
+    : NextResponse.next();
+
+  // Set rate limit headers
+  response.headers.set("X-RateLimit-Limit", MAX_REQUESTS.toString());
+  response.headers.set("X-RateLimit-Remaining", remaining.toString());
+  response.headers.set("X-RateLimit-Reset", reset.toString());
+
+  return response;
 }
 
 export const config = {
