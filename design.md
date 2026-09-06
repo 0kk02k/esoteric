@@ -107,51 +107,56 @@ Nicht geeignet:
 
 ## Farbpalette
 
-### MVP-Palette
+> **Verbindlicher Stand (2026-09-06):** Die implementierte, kaeltere und tiefschwarzere Palette ist die gewaehlte Welt ("Tiefschwarz-Englassistisch" statt warm-braun). Die frueheren Warmwerte (`#09080D`, `#15121D`, `#211A2C`, `#3A254F`, `#3A3148`) sind historisch und werden ersetzt.
+
+### Implementierte Palette
 
 | Rolle | Farbe | Verwendung |
 |-------|-------|------------|
-| Background | `#09080D` | Haupt-Hintergrund |
-| Surface | `#15121D` | Karten, Panels, Abschnitte |
-| Surface Raised | `#211A2C` | hervorgehobene Flaechen |
+| Background | `#050508` | Haupt-Hintergrund |
+| Surface | `#0A0A0F` | Karten, Panels, Abschnitte |
+| Surface Raised | `#12121A` | hervorgehobene Flaechen |
 | Text Primary | `#F4EBDD` | Haupttext |
 | Text Secondary | `#B8AFA3` | Untertexte, Hinweise |
-| Text Muted | `#7E748A` | Metadaten, Labels |
-| Gold | `#C8A45D` | Primaerer Akzent, Tarot, CTA |
-| Soft Gold | `#E0C98A` | Hover, Highlights |
-| Violet | `#7C5CFF` | KI-Akzent, aktive Zustaende |
-| Deep Violet | `#3A254F` | Hintergrund-Glow, KI-Zonen |
-| Border | `#3A3148` | dezente Linien |
+| Text Muted | `#8F89A8` | Metadaten, Labels (6,1:1 auf Background) |
+| Gold | `#C8A45D` | Primaerer Akzent, Tarot, CTA, Ritual |
+| Soft Gold | `#E0C98A` | Hover, Highlights, Focus-Ringe |
+| Violet | `#7C5CFF` | KI-Akzent, aktive Zustaende, grosse Flachen |
+| Violet Soft | `#9683FF` | Kleine Violett-Texte (6,8:1 — `#7C5CFF` erreicht als Textfarbe kein AA) |
+| Deep Violet | `#1A142E` | Hintergrund-Glow, KI-Zonen |
+| Border | `#1E1E2D` | dezente Linien |
+| Blueprint | `#0F172A` | historisches Blueprint-Token (wird auslaufend entfernt) |
 | Danger Muted | `#A66A6A` | Safety-/Fehlerhinweise |
 | Success Muted | `#8BAE8B` | Erfolg, gespeicherte Aktion |
 
-### CSS-Variablen-Vorschlag
+### CSS-Variablen (verbindlich, `web/src/app/globals.css`)
 
 ```css
 :root {
-  --color-bg: #09080D;
-  --color-surface: #15121D;
-  --color-surface-raised: #211A2C;
-  --color-text: #F4EBDD;
-  --color-text-secondary: #B8AFA3;
-  --color-text-muted: #7E748A;
-  --color-gold: #C8A45D;
-  --color-gold-soft: #E0C98A;
-  --color-violet: #7C5CFF;
-  --color-violet-deep: #3A254F;
-  --color-border: #3A3148;
-  --color-danger-muted: #A66A6A;
-  --color-success-muted: #8BAE8B;
+  --color-bg: #050508;
+  --color-surface: #0a0a0f;
+  --color-surface-raised: #12121a;
+  --color-text: #f4ebdd;
+  --color-text-secondary: #b8afa3;
+  --color-text-muted: #8f89a8;
+  --color-gold: #c8a45d;
+  --color-gold-soft: #e0c98a;
+  --color-violet: #7c5cff;
+  --color-violet-soft: #9683ff;
+  --color-violet-deep: #1a142e;
+  --color-border: #1e1e2d;
+  --color-blueprint: #0f172a;
 }
 ```
 
 ### Farbregeln
 
-- Gold ist der primaere Markenakzent, aber sparsam einzusetzen.
-- Violett markiert KI- und Synthese-Momente.
-- Safety-Hinweise nutzen gedempftes Rot, nicht alarmierendes Signalrot.
-- Flaechen bleiben dunkel und warm, nicht rein schwarz.
-- Text muss WCAG-kontrasttauglich bleiben.
+- Gold ist der primaere Markenakzent (Ritual, Karten, menschliche Beitraege), aber sparsam einzusetzen.
+- Violett markiert KI- und Synthese-Momente; Gold und Violett laufen nicht gleichrangig durcheinander — die Deutung ist violett, das Menschliche gold.
+- Kleine Violett-Texte (<18px) nutzen `--color-violet-soft`, nie reines `#7C5CFF` oder Transparenzstufen darunter 70%.
+- Gold-Text unter 100% Deckkraft nur ab 70% (4,6:1); darunter nur fuer rein dekorative, aria-hidden Elemente.
+- Safety-Hinweise nutzen gedempftes Rot (`#A66A6A`), nicht alarmierendes Signalrot.
+- Text muss WCAG-AA kontrasttauglich bleiben: Bodytext >= 4,5:1, Grosstext >= 3:1.
 - Keine grossen Regenbogen- oder Neonverlaeufe.
 
 ---
@@ -166,21 +171,23 @@ Nicht geeignet:
 | UI und Fliesstext | `Inter`, `Satoshi`, `Geist`, `Avenir Next` | klar, modern, lesbar |
 | Daten und Gradangaben | `IBM Plex Mono`, `Geist Mono`, `JetBrains Mono` | praezise, technisch, strukturiert |
 
-### MVP-Empfehlung mit frei verfuegbaren Fonts
+### Implementiert (verbindlich seit 2026-09-06)
 
 | Zweck | Font |
 |-------|------|
-| Headlines | `Fraunces` |
-| UI/Text | `Inter` oder `Geist` |
-| Daten | `Geist Mono` |
+| Headlines (Display) | `Cormorant Garamond` (300–700) |
+| Deutungs-/Lese-Serif | `Cormorant Garamond` — dieselbe Schrift traegt Display UND Lesebody, bewusst gewaehlt |
+| UI/Text | `Geist` |
+| Daten/Labels | `Geist Mono` |
 
 ### Typografische Regeln
 
 - Headlines duerfen poetisch und gross sein.
-- Reading-Texte brauchen hohe Lesbarkeit und ausreichende Zeilenhoehe.
-- Daten wie `Mond in Widder`, `Saturn Quadrat Sonne` koennen in kompakten Mono-Chips erscheinen.
-- Keine komplett verschnörkelten Fonts fuer Fliesstext.
-- Keine reine Monospace-App, sonst wirkt ESO zu trocken.
+- Deutungstext laeuft in Cormorant Garamond, aber NICHT kursiv und mit grosszuegiger Zeilenhoehe (>= 1,8) — Kursive Display-Serif ueber Absatzlaenge ist ein Lesbarkeitsfehler.
+- Mindestens 16px Bodytext (iOS Safari zoomt fokussierte Inputs unter 16px).
+- Daten wie `Mond in Widder`, `Saturn Quadrat Sonne` erscheinen in kompakten Mono-Chips (min. 10px, Kontrast beachten).
+- Keine reine Monospace-App; Mono ist Daten-/Signatur-Layer, nicht Textlayer.
+- Markanten Labels (9–11px Mono-Uppercase) nur wenn informationstragend; Deko-Metadaten ohne Funktion ("Engine v2.4", "Stream aktiv") haben im UI nichts verloren.
 
 ---
 
@@ -216,15 +223,15 @@ Nicht geeignet:
 | `space-12` | 48px | grosse Trennung |
 | `space-16` | 64px | Hero-/Ritualmomente |
 
-### Radius
+### Radius (implementiert, verbindlich)
 
 | Element | Radius |
 |---------|--------|
 | kleine Chips | 999px |
-| Inputs | 16px |
-| Cards/Panels | 24px |
-| Tarotkarten | 18px |
-| Modals | 28px |
+| Inputs | 12px |
+| Cards/Panels | 16px |
+| Tarotkarten | 12px |
+| Modals | 20px |
 
 ---
 
@@ -372,6 +379,8 @@ Regeln:
 
 ### 3. Tarot-Ziehung
 
+> **Entscheidung (2026-09-09, Shape-Brief):** Die Ziehung läuft als **Drei-Zonen-Resonanzfeld**: das Feld teilt sich in drei Zonen — Gegenwart, Spannung, Impuls — und jede Zone ist das Ziel. Ein Tipp in die Zone entzuendet eines ihrer 78 Lichter (deterministisch aus den Karten-IDs) und legt damit die Karte dieser Position fest. Die Wahl IST die Position — sie erklaert die Positionen von selbst. Mobile: drei horizontale Baender; Desktop: drei Spalten. Die 78 Lichter bleiben als Sternenhimmel-Textur sichtbar, sind aber keine Ziele mehr. Reversibilitaet (erneuter Tippt waehlt ab, `Neu waehlen` setzt zurueck), explizite Bestaetigung (`Materialisierung starten`), 3 Tabstopps, Live-Region — fruehere "drei verdeckte Karten"-Layouts dieser Sektion sind historisch.
+
 Ziel:
 
 - emotionaler Ritualmoment
@@ -380,9 +389,9 @@ Ziel:
 
 Layout:
 
-- drei verdeckte Karten
-- CTA `Karten aufdecken`
-- nach Flip: Karte, Position, Symbol-Chip
+- Resonanzfeld mit drei zu waehlenden Lichtpunkten
+- Positionsanzeigen `Gegenwart / Spannung / Impuls` fuellen sich bei der Wahl
+- nach Bestaetigung: Karten-Enthuellung mit Flip, Karte, Position, Symbol-Chips
 
 Positionen MVP:
 
@@ -463,13 +472,15 @@ Erfahre dein wahres Schicksal.
 - keine dauerhaften Ablenkungen
 - Bewegung bestaetigt Bedeutung
 - Accessibility respektieren: `prefers-reduced-motion`
+- **Die Buehne ruht:** der globale Hintergrund (CelestialBackground) ist statisch. Dauer-Rotationen und Partikel-Loops gehoeren nicht zur Buehne, sondern den Ritual-Momenten selbst (implementiert 2026-09-06; Framer-Motion-seitig via `<MotionConfig reducedMotion="user">` global abgesichert).
+- Reveals laufen ausschliesslich ueber `whileInView` (Viewport-Trigger), nie ueber `setTimeout`-Kaskaden — kein Layout-Shift waehrend des Lesens (implementiert 2026-09-06).
 
 ### Geeignete Animationen
 
 | Moment | Animation |
 |--------|-----------|
 | Karten ziehen | sanftes Anheben, Flip, kurzer Goldrand-Glow |
-| Reading entsteht | gestaffeltes Reveal der Abschnitte |
+| Reading entsteht | gestaffeltes Reveal der Abschnitte (whileInView) |
 | KI-Panel | dezenter violetter Rand-Puls beim Laden |
 | Chart-Kontext | Linien zeichnen sich kurz ein |
 | Speichern | kleine Siegel-/Archiv-Animation |
@@ -481,6 +492,7 @@ Erfahre dein wahres Schicksal.
 - lange Ladeanimationen
 - uebertriebene Portal-Animationen
 - zufaellige Glow-Effekte ohne Bedeutung
+- pseudo-quantifizierter Fortschritt (Fake-Prozentbalken) — Wartezeiten werden ehrlich gerahmt (erwartete Dauer, Status-Region)
 
 ---
 
