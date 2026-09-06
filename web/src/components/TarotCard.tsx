@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
@@ -33,7 +33,7 @@ export default function TarotCard({
   const positionLabel = POSITION_LABELS[position] ?? position;
   const [zoomed, setZoomed] = useState(false);
 
-  const coreName = name.split("–")[0].trim();
+  const coreName = name.split(/[–-]/)[0].trim();
 
   const clean = (s: string) =>
     s.replace(/ /g, "_").replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue")
@@ -71,6 +71,18 @@ export default function TarotCard({
     }
   };
 
+  // Escape closes the zoom overlay
+  useEffect(() => {
+    if (!zoomed) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoomed(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [zoomed]);
+
+  const orientationLabel = upright ? "aufrecht" : "umgekehrt";
+
   return (
     <>
       {/* Zoom overlay backdrop */}
@@ -80,6 +92,9 @@ export default function TarotCard({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${name} in Großansicht`}
             className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
             onClick={() => setZoomed(false)}
           >
@@ -111,13 +126,14 @@ export default function TarotCard({
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-[10px] font-mono text-gold/60 tracking-[0.2em] uppercase"
+          className="text-[10px] font-mono text-gold/80 tracking-[0.2em] uppercase"
         >
           {positionLabel}
         </motion.span>
 
         <div className="perspective-[1000px]">
-          <motion.div
+          <motion.button
+            type="button"
             onClick={handleClick}
             initial={false}
             animate={{
@@ -130,13 +146,25 @@ export default function TarotCard({
               damping: 20,
               mass: 1,
             }}
+            aria-label={
+              revealed
+                ? `${name}, ${orientationLabel}, Position ${positionLabel}${zoomed ? " — Großansicht schließen" : " — Großansicht öffnen"}`
+                : `Verdeckte Karte aufdecken (Position ${positionLabel})`
+            }
             className={cn(
-              "relative w-[200px] h-[360px] sm:w-[280px] sm:h-[504px] cursor-pointer preserve-3d transition-shadow duration-500",
+              // Responsive Spread-Maße: drei Karten passen in EINE Reihe auf
+              // allen Screens (Mobile ~26vw, Desktop 240px) — die Konstellation
+              // mit Gegenwart/Spannung/Impuls bleibt als Set lesbar.
+              "relative block w-[26vw] max-w-[200px] sm:w-[200px] lg:w-[240px] aspect-[5/9] bg-transparent border-none p-0 cursor-pointer preserve-3d transition-shadow duration-500 appearance-none",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-soft",
               revealed && "hover:shadow-[0_0_30px_rgba(200,164,93,0.2)]"
             )}
           >
-            {/* Card Back */}
-            <div className="absolute inset-0 backface-hidden rounded-[var(--radius-tarot)] border border-gold/30 bg-surface-raised flex items-center justify-center overflow-hidden">
+            {/* Card Back (decorativ — der Button selbst trägt das aria-label) */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 backface-hidden rounded-[var(--radius-tarot)] border border-gold/30 bg-surface-raised flex items-center justify-center overflow-hidden"
+            >
               <div className="absolute inset-4 border border-gold/10 rounded-full" />
               <div className="absolute inset-8 border border-gold/5 rounded-full" />
 
@@ -168,19 +196,26 @@ export default function TarotCard({
                 </div>
               )}
             </div>
-          </motion.div>
+          </motion.button>
         </div>
 
-        {/* Element chips below card — visible after reveal */}
+        {/* Element chips below card — visible after reveal.
+            Umgekehrte Karten werden TEXTLICH gekennzeichnet (die Chips selbst
+            bleiben lesbar; die Rotation gehört nur der Kartenillustration). */}
         <AnimatePresence>
-          {revealed && (element || zodiacAssociation) && (
+          {revealed && (element || zodiacAssociation || !upright) && (
             <motion.div
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
-              className={cn("flex flex-wrap gap-1.5 justify-center", !upright && "rotate-180")}
+              className="flex flex-wrap gap-1.5 justify-center"
             >
+              {!upright && (
+                <span className="text-[9px] font-mono text-violet-soft bg-violet-deep/30 border border-violet/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Umgekehrt
+                </span>
+              )}
               {element && (
-                <span className="text-[9px] font-mono text-violet bg-violet-deep/30 border border-violet/20 px-2 py-0.5 rounded-full">
+                <span className="text-[9px] font-mono text-violet-soft bg-violet-deep/30 border border-violet/20 px-2 py-0.5 rounded-full">
                   {element}
                 </span>
               )}

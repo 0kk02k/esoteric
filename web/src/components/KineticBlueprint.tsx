@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import TarotCard from "./TarotCard";
 import SymbolChip from "./SymbolChip";
@@ -21,13 +21,29 @@ interface KineticTextProps {
   className?: string;
 }
 
+/**
+ * Rendert Inline-Markdown (**fett**) als echtes <strong>, statt es zu strippen.
+ * Exportiert, damit auch der Follow-up-Thread dieselbe Behandlung nutzt.
+ */
+export function renderInline(text: string): ReactNode[] {
+  return text.split(/\*\*(.+?)\*\*/g).map((part, i) =>
+    i % 2 === 1 ? (
+      <strong key={i} className="text-text font-semibold not-italic">
+        {part}
+      </strong>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+}
+
 export const KineticBlueprint = ({ text, cards, className }: KineticTextProps) => {
   const sections = text.includes("**")
     ? text.split(/\n(?=\*\*)/)
     : text.split(/\n\n+/);
 
   return (
-    <div className={cn("space-y-24 py-8", className)}>
+    <div className={cn("space-y-16 py-4", className)}>
       {sections.map((section, index) => (
         <BlueprintSection key={index} content={section} index={index} cards={cards} />
       ))}
@@ -35,18 +51,7 @@ export const KineticBlueprint = ({ text, cards, className }: KineticTextProps) =
   );
 };
 
-const stripMarkdown = (s: string) => s.replace(/\*\*/g, '');
-
-const BlueprintSection = ({ content, index, cards }: { content: string; index: number; cards?: DrawnCard[] }) => {
-  const [isRendered, setIsRendered] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsRendered(true), index * 1000);
-    return () => clearTimeout(timer);
-  }, [index]);
-
-  if (!isRendered) return null;
-
+const BlueprintSection = ({ content, cards }: { content: string; index: number; cards?: DrawnCard[] }) => {
   const match = content.match(/^\s*\*\*([\s\S]*?)\*\*\s*:?\s*([\s\S]*)/);
   const title = match ? match[1] : null;
   const body = match ? match[2] : content;
@@ -54,12 +59,12 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
   if (title === "Die Karten" && cards) {
     const cardSegments = body.split(/\n(?=###)/);
     return (
-      <div className="space-y-12">
+      <div className="space-y-10">
         <SectionHeader title={title} variant="gold" />
-        <div className="grid grid-cols-1 gap-16">
+        <div className="grid grid-cols-1 gap-12">
           {cardSegments.map((segment, i) => {
             const cardMatch = segment.match(/### (.*?) \((.*?)\)\n([\s\S]*)/);
-            if (!cardMatch) return <p key={i} className="text-text-secondary italic pl-8">{segment}</p>;
+            if (!cardMatch) return <p key={i} className="text-text-secondary font-serif pl-8">{renderInline(segment)}</p>;
 
             const cardName = cardMatch[1].trim();
             const orientation = cardMatch[2].trim();
@@ -73,24 +78,25 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
             return (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="flex flex-col md:flex-row items-center gap-12 pl-8"
+                viewport={{ once: true, margin: "0px 0px -60px 0px" }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                className="flex flex-col md:flex-row items-center gap-10 pl-8"
               >
                 <div className="flex-1 space-y-4">
                   <div className="flex items-center justify-between gap-4">
-                    <h5 className="text-lg font-display text-gold font-medium italic">
-                      {cardName} ({orientation})
-                    </h5>
+                    <h4 className="text-lg font-display text-gold font-medium">
+                      {cardName} <span className="text-text-muted text-sm">({orientation})</span>
+                    </h4>
                     {cardData?.element && (
                       <SymbolChip variant="violet" className="opacity-80">
                         {cardData.element}
                       </SymbolChip>
                     )}
                   </div>
-                  <div className="text-text-secondary text-xl sm:text-2xl leading-[1.7] font-serif italic border-l border-gold/10 pl-6">
-                    {stripMarkdown(cardBody)}
+                  <div className="text-text-secondary text-xl leading-[1.85] font-serif border-l border-gold/10 pl-6">
+                    {renderInline(cardBody)}
                   </div>
                 </div>
                 {cardData && (
@@ -108,10 +114,10 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0, x: -16 }}
       whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true, margin: "-100px" }}
-      transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+      viewport={{ once: true, margin: "0px 0px -80px 0px" }}
+      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
       className="relative group"
     >
       <Sidebar variant="violet" />
@@ -120,23 +126,18 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
         {title && <SectionHeader title={title} showLine={true} variant="violet" />}
 
         <div className="relative">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 2, delay: 0.6 }}
-            className="text-text-secondary text-xl sm:text-2xl leading-[1.7] font-serif italic border-l border-violet/10 pl-6"
-          >
+          <div className="text-text-secondary text-xl leading-[1.85] font-serif border-l border-violet/10 pl-6">
             {body.split("\n").map((line, i) => {
               const trimmed = line.trim();
               if (!trimmed) return null;
 
               const isList = trimmed.startsWith("-") || trimmed.startsWith("·") || /^\d+\./.test(trimmed);
               const isSubHeading = trimmed.startsWith(">>");
-              const clean = stripMarkdown(isList ? trimmed.replace(/^[-·\d.]+\s*/, '') : trimmed);
+              const clean = isList ? trimmed.replace(/^[-·\d.]+\s*/, '') : trimmed;
 
               if (isSubHeading) {
                 return (
-                  <p key={i} className="text-violet/80 font-mono text-[11px] uppercase tracking-[0.3em] mt-8 first:mt-0 mb-2 not-italic">
+                  <p key={i} className="text-violet-soft font-mono text-[11px] uppercase tracking-[0.3em] mt-8 first:mt-0 mb-2">
                     {clean.replace(/^>>\s*/, '')}
                   </p>
                 );
@@ -147,11 +148,11 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
                   "mb-4 last:mb-0",
                   isList && "pl-6 relative before:content-[''] before:absolute before:left-0 before:top-4 before:w-2 before:h-[1px] before:bg-violet/40"
                 )}>
-                  {clean}
+                  {renderInline(clean)}
                 </p>
               );
             })}
-          </motion.div>
+          </div>
 
           <BottomLine variant="violet" />
         </div>
@@ -162,12 +163,12 @@ const BlueprintSection = ({ content, index, cards }: { content: string; index: n
 
 const SectionHeader = ({ title, showLine = false, variant = "violet" }: { title: string; showLine?: boolean; variant?: "gold" | "violet" }) => (
   <div className="flex items-center gap-6">
-    <h4 className={cn(
+    <h3 className={cn(
       "text-[11px] font-mono uppercase tracking-[0.4em] font-bold",
-      variant === "gold" ? "text-gold" : "text-violet"
+      variant === "gold" ? "text-gold" : "text-violet-soft"
     )}>
       {title}
-    </h4>
+    </h3>
     {showLine && <div className={cn(
       "h-[0.5px] flex-1 bg-gradient-to-r to-transparent",
       variant === "gold" ? "from-gold/30" : "from-violet/30"
@@ -182,8 +183,9 @@ const Sidebar = ({ variant = "violet" }: { variant?: "gold" | "violet" }) => (
   )}>
     <motion.div
       initial={{ height: 0 }}
-      animate={{ height: "100%" }}
-      transition={{ duration: 2.5, ease: "easeInOut" }}
+      whileInView={{ height: "100%" }}
+      viewport={{ once: true }}
+      transition={{ duration: 1.4, ease: "easeOut" }}
       className={cn(
         "absolute top-0 left-0 w-full",
         variant === "gold" ? "bg-gold/40" : "bg-violet/40"
@@ -205,7 +207,7 @@ const BottomLine = ({ variant = "violet" }: { variant?: "gold" | "violet" }) => 
     initial={{ width: 0 }}
     whileInView={{ width: "100%" }}
     viewport={{ once: true }}
-    transition={{ duration: 1.5, delay: 0.4 }}
+    transition={{ duration: 1.2, delay: 0.3, ease: "easeOut" }}
     className={cn(
       "absolute -bottom-4 left-0 h-[0.5px] bg-gradient-to-r to-transparent",
       variant === "gold"

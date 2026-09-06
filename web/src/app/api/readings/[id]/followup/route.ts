@@ -143,7 +143,12 @@ export async function POST(
 
     logger.info("ai", "Follow-up generation successful", { readingId: id });
 
-    return NextResponse.json({ text });
+    // Restnachfragen für heute mitgeben (limitCheck lieferte den Stand VOR
+    // dem Increment), damit die UI sie anzeigen kann, bevor das Limit greift.
+    return NextResponse.json({
+      text,
+      followupsRemaining: Math.max(0, limitCheck.followupsRemaining - 1),
+    });
   } catch (error) {
     logger.error("ai", "Follow-up generation failed", {
       readingId: (await params).id,

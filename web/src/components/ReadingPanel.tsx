@@ -21,10 +21,10 @@ export default function ReadingPanel({
       <div className="bg-violet-deep/30 border-b border-violet/20 px-6 py-3 flex items-center justify-between">
          <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-violet shadow-[0_0_10px_rgba(124,92,255,0.8)]" />
-            <h3 className="text-[9px] font-mono text-violet tracking-[0.2em] uppercase">KI-Deutung</h3>
+            <h3 className="text-[10px] font-mono text-violet-soft tracking-[0.2em] uppercase">KI-generierte Deutung</h3>
          </div>
          {model && (
-            <span className="text-[9px] font-mono text-violet/40 uppercase">{model}</span>
+            <span className="text-[9px] font-mono text-text-muted uppercase">{model}</span>
          )}
       </div>
 
@@ -46,9 +46,8 @@ export default function ReadingPanel({
       </div>
 
       <div className="bg-bg/40 px-6 py-3 flex items-center gap-4 text-[9px] font-mono text-text-muted uppercase tracking-widest border-t border-gold/5">
-        <Sparkles className="w-3 h-3" />
-        <span>Symbolische Reflexion</span>
-        <div className="ml-auto opacity-40">ESO ENGINE v1</div>
+        <Sparkles className="w-3 h-3 shrink-0" />
+        <span>Symbolische Reflexion, keine professionelle Beratung</span>
       </div>
     </Panel>
   );

@@ -91,7 +91,7 @@ export function CrystalSpinner({ className, label }: CrystalSpinnerProps) {
       </div>
 
       {label && (
-        <p className="text-[10px] font-mono text-gold/50 uppercase tracking-widest">
+        <p className="text-[10px] font-mono text-gold/70 uppercase tracking-widest">
           {label}
         </p>
       )}

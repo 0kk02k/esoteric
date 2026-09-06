@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import StepIndicator from "@/components/StepIndicator";
 import TarotCard from "@/components/TarotCard";
 import StellarField from "@/components/StellarField";
@@ -10,14 +10,16 @@ import FeedbackForm from "@/components/FeedbackForm";
 import SymbolChip from "@/components/SymbolChip";
 import { Panel } from "@/components/Panel";
 import { Button } from "@/components/Button";
-import { KineticBlueprint } from "@/components/KineticBlueprint";
+import { KineticBlueprint, renderInline } from "@/components/KineticBlueprint";
 import { CrystalShard } from "@/components/CrystalShard";
 import { CrystalSpinner } from "@/components/CrystalSpinner";
-import { Sparkles, ArrowLeft, X, Info, LayoutGrid, MessageSquare, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowLeft, X, Info, MessageSquare, ArrowRight, Phone } from "lucide-react";
 import type { ReadingResponse } from "@/lib/ai";
 import type { ChartResponse } from "@/lib/astrology";
 import { getOrCreateSessionToken } from "@/lib/session";
-import { cn } from "@/lib/utils";
+import { birthTimezoneOffset, cn } from "@/lib/utils";
+import { api, toUserError, type ErrorKind } from "@/lib/api-client";
+import { CRISIS_INTRO, CRISIS_OUTRO, CRISIS_LINES } from "@/lib/crisis-resources";
 
 type Step = "question" | "birth" | "stellar" | "drawing" | "generating" | "result";
 
@@ -46,9 +48,12 @@ type ReadingState = {
   cards: DrawnCard[];
   revealed: boolean[];
   result: ReadingResponse | null;
+  geoWarning: string | null;
   error: string | null;
+  errorKind: ErrorKind;
   sessionToken: string;
   readingsRemaining: number | null;
+  followupsRemaining: number | null;
   followupQuestion: string;
   followupMessages: { role: "user" | "assistant"; content: string }[];
   followupLoading: boolean;
@@ -71,9 +76,12 @@ const INITIAL_STATE: ReadingState = {
   cards: [],
   revealed: [false, false, false],
   result: null,
+  geoWarning: null,
   error: null,
+  errorKind: null,
   sessionToken: "",
   readingsRemaining: null,
+  followupsRemaining: null,
   followupQuestion: "",
   followupMessages: [],
   followupLoading: false,
@@ -88,10 +96,111 @@ const CATEGORIES = [
   { value: "sonstiges", label: "Sonstiges" },
 ];
 
+/** Beispielthemen als Chips — design.md: Cold-Start-Erleichterung für die Frage-Eingabe. */
+const TOPIC_SUGGESTIONS = [
+  "Eine Entscheidung, die vor mir liegt",
+  "Meine aktuelle Lebensphase",
+  "Was eine Beziehung in mir bewegt",
+  "Worauf ich meinen Fokus richten will",
+];
+
+const STORAGE_KEY = "eso.reading.state.v1";
+const GENERATE_TIMEOUT_MS = 60_000;
+const CREATE_TIMEOUT_MS = 45_000;
+const SHUFFLE_TIMEOUT_MS = 20_000;
+const TIMEOUT_MESSAGE =
+  "Das hat zu lange gedauert — die Verbindung war zu langsam. Deine Auswahl ist noch da; versuche es erneut.";
+
+function restorePersistedState(): ReadingState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as Partial<ReadingState>;
+    if (!saved || typeof saved !== "object" || !saved.step) return null;
+    // Ein unterbrochener Generierungs-Lauf wird auf den vorherigen Schritt
+    // zurückgesetzt — die Karten sind da, die Synthese lässt sich neu starten.
+    let step: Step = saved.step;
+    if (step === "generating") step = "drawing";
+    if (step === "result" && !saved.result) step = "drawing";
+    return {
+      ...INITIAL_STATE,
+      ...saved,
+      step,
+      error: null,
+      errorKind: null,
+      followupLoading: false,
+      followupError: null,
+      followupQuestion: "",
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default function ReadingPage() {
   const [state, setState] = useState<ReadingState>(INITIAL_STATE);
-
+  const [confirmAbort, setConfirmAbort] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const tokenInitialized = useRef(false);
+  const errorRef = useRef<HTMLDivElement>(null);
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+  const reduceMotion = useReducedMotion();
+
+  /** true, wenn der laufende Abort vom Timeout (nicht vom Unmount) kam. */
+  const timedOut = () => abortRef.current?.signal.reason === "timeout";
+
+  // Zustand über Reloads und Unterbrechungen retten (Casey: Mobile, Tab-Wechsel).
+  // Bewusst setState-im-Effect: der Restore darf erst nach der Hydration laufen,
+  // damit Server-Render und Client-Start nicht auseinanderlaufen.
+  useEffect(() => {
+    const restored = restorePersistedState();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- einmaliger Hydrations-Restore
+    if (restored) setState(restored);
+  }, []);
+
+  // Debounced Persistenz: nicht bei jedem Tastenschlag den vollen State schreiben
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        const persistable = { ...state, followupLoading: false, followupError: null, error: null, errorKind: null };
+        window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
+      } catch {
+        /* Speicher voll oder blockiert — kein Grund, den Flow zu stören */
+      }
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [state]);
+
+  // Laufende Anfragen beim Verlassen abbrechen
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  const requestSignal = (timeoutMs?: number): AbortSignal => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    if (timeoutMs) window.setTimeout(() => controller.abort("timeout"), timeoutMs);
+    return controller.signal;
+  };
+
+  // Bei Schrittwechsel zurück zum Seitenanfang UND Fokus auf die neue
+  // Step-Headline — Screenreader- und Tastaturnutzer erfahren den Wechsel.
+  const prevStep = useRef<Step>(state.step);
+  useEffect(() => {
+    if (prevStep.current !== state.step) {
+      prevStep.current = state.step;
+      window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+      stepHeadingRef.current?.focus({ preventScroll: true });
+    }
+  }, [state.step, reduceMotion]);
+
+  // Fehler in den Viewport holen — sie erscheinen über dem aktuellen Schritt
+  useEffect(() => {
+    if (state.error && errorRef.current) {
+      errorRef.current.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
+      errorRef.current.focus({ preventScroll: true });
+    }
+  }, [state.error, reduceMotion]);
 
   useEffect(() => {
     if (tokenInitialized.current) return;
@@ -122,14 +231,18 @@ export default function ReadingPage() {
 
   const submitQuestion = () => {
     if (state.question.trim().length < 5) return;
-    setState((s) => ({ ...s, step: "birth", error: null }));
+    setState((s) => ({ ...s, step: "birth", error: null, errorKind: null }));
   };
 
   const createReading = useCallback(async (question: string, category: string, birthProfileId: string | null, selectedCardIds: string[]) => {
     try {
-      const res = await fetch("/api/readings", {
+      const reading = await api<{
+        id: string;
+        tarotDraws: { card: { id: string; name: string; element: string | null; zodiacAssociation: string | null }; position: string; upright: boolean }[];
+      }>("/api/readings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: requestSignal(CREATE_TIMEOUT_MS),
         body: JSON.stringify({
           question,
           questionCategory: category,
@@ -138,20 +251,7 @@ export default function ReadingPage() {
           selectedCardIds,
         }),
       });
-      if (!res.ok) {
-        const err = await res.json();
-        if (res.status === 429) {
-          setState((s) => ({ ...s, error: `Tageslimit erreicht. ${err.readingsRemaining ?? 0} Readings übrig.`, readingsRemaining: 0 }));
-          return;
-        }
-        throw new Error(err.error || `Reading error: ${res.status}`);
-      }
-      const reading = await res.json();
-      const cards: DrawnCard[] = reading.tarotDraws.map((d: {
-        card: { id: string; name: string; element: string | null; zodiacAssociation: string | null };
-        position: string;
-        upright: boolean;
-      }) => ({
+      const cards: DrawnCard[] = reading.tarotDraws.map((d) => ({
         id: d.card.id,
         name: d.card.name,
         position: d.position,
@@ -159,36 +259,48 @@ export default function ReadingPage() {
         element: d.card.element,
         zodiacAssociation: d.card.zodiacAssociation,
       }));
-      setState((s) => ({ ...s, readingId: reading.id, cards, step: "drawing" }));
+      setState((s) => ({ ...s, readingId: reading.id, cards, step: "drawing", error: null, errorKind: null }));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setState((s) => ({ ...s, error: msg }));
+      if (err instanceof DOMException && err.name === "AbortError") {
+        // Timeout: das Feld entsperren und eine Handlung anbieten statt Stillstand
+        if (timedOut()) {
+          setState((s) => ({ ...s, error: TIMEOUT_MESSAGE, errorKind: null }));
+        }
+        return;
+      }
+      const { message, kind } = toUserError(err);
+      setState((s) => ({ ...s, error: message, errorKind: kind }));
     }
   }, [state.sessionToken]);
 
   const fetchShuffledDeck = useCallback(async () => {
     try {
-      const res = await fetch("/api/tarot/shuffle");
-      if (!res.ok) throw new Error(`Shuffle error: ${res.status}`);
-      const data = await res.json();
+      const data = await api<{ cardIds: string[] }>("/api/tarot/shuffle", { signal: requestSignal(SHUFFLE_TIMEOUT_MS) });
       setState((s) => ({ ...s, shuffledDeck: data.cardIds, step: "stellar" }));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setState((s) => ({ ...s, error: msg }));
+      if (err instanceof DOMException && err.name === "AbortError") {
+        if (timedOut()) {
+          setState((s) => ({ ...s, error: TIMEOUT_MESSAGE, errorKind: null }));
+        }
+        return;
+      }
+      const { message, kind } = toUserError(err);
+      setState((s) => ({ ...s, error: message, errorKind: kind }));
     }
   }, []);
 
   const submitBirth = useCallback(async () => {
     if (!state.includeBirth) {
-      setState((s) => ({ ...s, step: "stellar" }));
+      setState((s) => ({ ...s, step: "stellar", geoWarning: null }));
       fetchShuffledDeck();
       return;
     }
 
     try {
-      const bpRes = await fetch("/api/birth-profiles", {
+      const bp = await api<{ id: string; birthLat: number | null; birthLon: number | null }>("/api/birth-profiles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: requestSignal(),
         body: JSON.stringify({
           birthDate: state.birthDate,
           birthTime: state.birthTime || undefined,
@@ -197,14 +309,19 @@ export default function ReadingPage() {
           sessionToken: state.sessionToken || undefined,
         }),
       });
-      if (!bpRes.ok) throw new Error(`Birth profile error: ${bpRes.status}`);
-      const bp = await bpRes.json();
+
+      // Ortssuche ist still fehlgeschlagen? Aussprechen, statt stumm das Radix zu verlieren.
+      const geoFailed = state.birthCity.trim().length > 0 && (bp.birthLat == null || bp.birthLon == null);
+      const geoWarning = geoFailed
+        ? `Der Ort „${state.birthCity.trim()}" konnte nicht eindeutig gefunden werden. Die Deutung läuft ohne astrologischen Kontext — du kannst zurückgehen und die Schreibweise anpassen.`
+        : null;
 
       // Calculate chart
       const bd = new Date(state.birthDate);
-      const chartRes = await fetch("/api/astrology/chart", {
+      const chartData = await api<ChartResponse>("/api/astrology/chart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: requestSignal(),
         body: JSON.stringify({
           year: bd.getFullYear(),
           month: bd.getMonth() + 1,
@@ -213,21 +330,17 @@ export default function ReadingPage() {
           minute: state.birthTime ? parseInt(state.birthTime.split(":")[1]) : 0,
           latitude: bp.birthLat,
           longitude: bp.birthLon,
-          timezoneOffset: -(bd.getTimezoneOffset() / 60),
+          timezoneOffset: birthTimezoneOffset(state.birthDate),
           timeUnknown: !state.birthTime,
         }),
-      });
+      }).catch(() => null);
 
-      let chartData: ChartResponse | null = null;
-      if (chartRes.ok) {
-        chartData = await chartRes.json();
-      }
-      
-      setState((s) => ({ ...s, birthProfileId: bp.id, chart: chartData }));
+      setState((s) => ({ ...s, birthProfileId: bp.id, chart: chartData, geoWarning }));
       fetchShuffledDeck();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setState((s) => ({ ...s, error: msg }));
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      const { message, kind } = toUserError(err);
+      setState((s) => ({ ...s, error: message, errorKind: kind }));
     }
   }, [state.includeBirth, state.birthDate, state.birthTime, state.birthCity, state.sessionToken, fetchShuffledDeck]);
 
@@ -248,21 +361,30 @@ export default function ReadingPage() {
 
   const generateAIReading = useCallback(async () => {
     if (!state.readingId) return;
-    setState((s) => ({ ...s, step: "generating", error: null }));
+    setState((s) => ({ ...s, step: "generating", error: null, errorKind: null }));
 
     try {
-      const res = await fetch(`/api/readings/${state.readingId}/generate`, {
+      const result = await api<ReadingResponse>(`/api/readings/${state.readingId}/generate`, {
         method: "POST",
+        signal: requestSignal(GENERATE_TIMEOUT_MS),
       });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || `Generation error: ${res.status}`);
-      }
-      const result: ReadingResponse = await res.json();
       setState((s) => ({ ...s, result, step: "result" }));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setState((s) => ({ ...s, error: msg, step: "result" }));
+      if (err instanceof DOMException && err.name === "AbortError") {
+        // Timeout ist ein behandelter Fehler: zurück zu den Karten, Retry per Klick
+        if (timedOut()) {
+          setState((s) => ({
+            ...s,
+            error: "Die Synthese hat zu lange gedauert. Deine Karten sind noch da — versuche es erneut.",
+            errorKind: null,
+            step: "drawing",
+          }));
+        }
+        return;
+      }
+      const { message, kind } = toUserError(err);
+      // Bleibe im drawing-Schritt: Karten und Auswahl bleiben, Retry ist ein Klick.
+      setState((s) => ({ ...s, error: message, errorKind: kind, step: "drawing" }));
     }
   }, [state.readingId]);
 
@@ -277,99 +399,153 @@ export default function ReadingPage() {
       followupMessages: [...s.followupMessages, { role: "user", content: question }],
     }));
     try {
-      const res = await fetch(`/api/readings/${state.readingId}/followup`, {
+      const data = await api<{ text: string; followupsRemaining?: number }>(`/api/readings/${state.readingId}/followup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: requestSignal(),
         body: JSON.stringify({
           question,
           sessionToken: state.sessionToken,
           history: state.followupMessages,
         }),
       });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || `Follow-up error: ${res.status}`);
-      }
-      const data = await res.json();
       setState((s) => ({
         ...s,
         followupMessages: [...s.followupMessages, { role: "assistant", content: data.text }],
+        followupsRemaining: typeof data.followupsRemaining === "number" ? data.followupsRemaining : s.followupsRemaining,
         followupLoading: false,
       }));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setState((s) => ({ ...s, followupError: msg, followupLoading: false }));
+      if (err instanceof DOMException && err.name === "AbortError") {
+        if (timedOut()) {
+          setState((s) => ({
+            ...s,
+            followupError: "Die Nachfrage hat zu lange gedauert. Sie steht noch im Feld — versuche es erneut.",
+            followupLoading: false,
+          }));
+        }
+        return;
+      }
+      const { message } = toUserError(err);
+      // Die getippte Frage zurück ins Feld — keine Eingabe geht verloren.
+      setState((s) => ({
+        ...s,
+        followupError: message,
+        followupLoading: false,
+        followupQuestion: question,
+      }));
     }
   }, [state.readingId, state.followupQuestion, state.sessionToken, state.followupMessages]);
 
+  const resetRitual = useCallback(() => {
+    abortRef.current?.abort();
+    try {
+      window.sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* egal — frischer Zustand reicht */
+    }
+    setConfirmAbort(false);
+    setState(INITIAL_STATE);
+  }, []);
+
+  const isCrisis =
+    state.result?.safetyAction === "crisis_response" || state.result?.safetyAction === "block";
+
+  const todayMax = new Date().toISOString().split("T")[0];
+  const questionMinMet = state.question.trim().length >= 5;
+
   return (
     <div className="flex-1 px-4 py-8 sm:py-16 relative overflow-hidden">
+      <h1 className="sr-only">Dein ESO Reading</h1>
       {/* Expanded Layout Wrapper */}
       <div className="mx-auto max-w-7xl flex flex-col gap-12 relative z-10">
-        
+
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-gold/10 pb-8">
           <div className="flex flex-col gap-3">
-             <span className="text-xs font-mono text-gold/60 uppercase tracking-[0.3em]">KI-Grimoire</span>
-             <StepIndicator current={state.step} />
+             <span className="text-xs font-mono text-gold/80 uppercase tracking-[0.3em]">Kybernetisches Grimoire</span>
+             <StepIndicator current={state.step} skipped={state.includeBirth ? [] : ["birth"]} />
           </div>
-          
+
           <div className="flex flex-col items-end gap-6">
-             <div className="flex items-center gap-6">
-                <div className="hidden lg:flex items-center gap-2 text-[10px] font-mono text-text-muted uppercase tracking-widest">
-                   <span className="w-2 h-2 rounded-full bg-success-muted animate-pulse" />
-                   Stream Aktiv
-                </div>
-                <Link
-                   href="/"
-                   className="group flex items-center gap-2 text-sm text-text-muted hover:text-gold transition-colors"
-                 >
-                   <X className="w-4 h-4" />
-                   <span>Abbrechen</span>
-                 </Link>
-             </div>
+             {confirmAbort ? (
+               <div className="flex items-center gap-3 text-sm">
+                  <span className="text-text-secondary">Reading verwerfen?</span>
+                  <button
+                    type="button"
+                    onClick={resetRitual}
+                    className="text-danger-muted hover:text-text font-medium px-3 py-2 rounded-lg hover:bg-danger-muted/10 transition-colors"
+                  >
+                    Ja, verwerfen
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmAbort(false)}
+                    className="text-gold hover:text-gold-soft font-medium px-3 py-2 rounded-lg hover:bg-gold/10 transition-colors"
+                  >
+                    Weitermachen
+                  </button>
+               </div>
+             ) : (
+               <button
+                 type="button"
+                 onClick={() => setConfirmAbort(true)}
+                 className="group flex items-center gap-2 text-sm text-text-muted hover:text-gold transition-colors px-2 py-2 -mx-2 rounded-lg"
+               >
+                 <X className="w-4 h-4" />
+                 <span>Abbrechen</span>
+               </button>
+             )}
           </div>
         </header>
 
         <main className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-           <AnimatePresence mode="wait">
+           <AnimatePresence>
              {state.error && (
                <motion.div
                  key="global-error"
+                 ref={errorRef}
+                 tabIndex={-1}
                  initial={{ opacity: 0, height: 0 }}
                  animate={{ opacity: 1, height: "auto" }}
                  exit={{ opacity: 0, height: 0 }}
-                 className="lg:col-span-12"
+                 className="lg:col-span-12 focus:outline-none"
+                 role="alert"
                >
                  <Panel className={cn(
                    "border-danger-muted/40 bg-danger-muted/5",
-                   state.error.includes("Tageslimit") && "border-gold/30 bg-gold/5"
+                   state.errorKind && "border-gold/30 bg-gold/5"
                  )}>
                    <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                       <div className="flex items-start gap-3">
                          <div className={cn(
                            "w-1.5 h-1.5 rounded-full mt-1.5 shrink-0",
-                           state.error.includes("Tageslimit") ? "bg-gold shadow-[0_0_8px_rgba(200,164,93,0.6)]" : "bg-danger-muted"
+                           state.errorKind ? "bg-gold shadow-[0_0_8px_rgba(200,164,93,0.6)]" : "bg-danger-muted"
                          )} />
                          <div className="space-y-1">
                             <p className={cn(
                               "text-sm font-mono leading-relaxed",
-                              state.error.includes("Tageslimit") ? "text-gold" : "text-danger-muted"
+                              state.errorKind ? "text-gold" : "text-danger-muted"
                             )}>{state.error}</p>
-                            {state.error.includes("Tageslimit") && (
-                              <p className="text-[10px] text-text-muted uppercase tracking-widest">
-                                Schalte mehr Tiefe und tägliche Readings frei.
+                            {state.errorKind === "limit" && (
+                              <p className="text-[11px] text-text-secondary">
+                                Free umfasst drei Readings pro Tag. Plus erweitert auf zwanzig.
                               </p>
                             )}
                          </div>
                       </div>
-                      
-                      {state.error.includes("Tageslimit") && (
-                        <Link href="/pricing">
-                          <Button variant="secondary" className="h-10 px-6 text-xs whitespace-nowrap group">
-                            Plus entdecken
-                            <ArrowRight className="w-3.5 h-3.5 ml-2 group-hover:translate-x-1 transition-transform" />
+
+                      {state.errorKind && (
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                          <Link href="/pricing">
+                            <Button variant="secondary" className="h-10 px-6 text-xs whitespace-nowrap group">
+                              Plus entdecken
+                              <ArrowRight className="w-3.5 h-3.5 ml-2 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                          </Link>
+                          <Button onClick={resetRitual} variant="ghost" className="h-10 px-6 text-xs whitespace-nowrap">
+                            Neues Ritual beginnen
                           </Button>
-                        </Link>
+                        </div>
                       )}
                    </div>
                  </Panel>
@@ -377,11 +553,11 @@ export default function ReadingPage() {
              )}
 
              {/* Dynamic Content Area */}
-             <div 
+             <div
                 key="main-content-area"
                 className={cn(
                   "lg:col-span-12 transition-all duration-700",
-                  state.step === "result" ? "lg:col-span-12" : "lg:col-span-8 lg:col-start-3"
+                  state.step === "result" || state.step === "drawing" ? "lg:col-span-12" : "lg:col-span-8 lg:col-start-3"
                 )}
              >
                 <AnimatePresence mode="wait">
@@ -389,40 +565,69 @@ export default function ReadingPage() {
                   {state.step === "question" && (
                     <motion.div
                       key="question"
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
+                      exit={{ opacity: 0, y: -16 }}
                     >
                       <Panel className="p-5 sm:p-8 lg:p-12">
                          <div className="flex items-center gap-4 mb-8">
                             <div className="w-10 h-10 rounded-full border border-gold/20 flex items-center justify-center">
                                <Sparkles className="w-5 h-5 text-gold" />
                             </div>
-                            <h2 className="font-display text-3xl sm:text-4xl text-text leading-tight heading-glow">Was beschäftigt dich?</h2>
+                            <h2
+                              ref={stepHeadingRef}
+                              tabIndex={-1}
+                              className="font-display text-3xl sm:text-4xl text-text leading-tight heading-glow focus:outline-none"
+                            >
+                              Was beschäftigt dich?
+                            </h2>
                          </div>
-                        
+
                         <textarea
                           value={state.question}
                           onChange={(e) => setState((s) => ({ ...s, question: e.target.value }))}
                           placeholder="Beschreibe dein Thema oder stelle eine offene Frage..."
+                          aria-label="Deine Frage oder dein Thema"
                           rows={6}
                           maxLength={500}
-                          className="w-full glass-input rounded-2xl px-6 py-5 text-xl text-text resize-none mb-8"
+                          aria-describedby="question-counter"
+                          className="w-full glass-input rounded-2xl px-6 py-5 text-xl text-text resize-none mb-6"
                         />
 
+                        <div className="flex flex-wrap gap-2 mb-8">
+                          {TOPIC_SUGGESTIONS.map((topic) => (
+                            <button
+                              key={topic}
+                              type="button"
+                              title="Als Ausgangspunkt übernehmen"
+                              onClick={() =>
+                                setState((s) => ({
+                                  ...s,
+                                  // Nie kommentarlos überschreiben: angehängt statt ersetzt
+                                  question: s.question.trim() ? `${s.question.trim()} ${topic}` : topic,
+                                }))
+                              }
+                              className="crystal-chip text-xs px-4 py-2 rounded-xl text-text-secondary hover:text-text transition-colors"
+                            >
+                              {topic}
+                            </button>
+                          ))}
+                        </div>
+
                         <div className="mb-10">
-                          <p className="text-[10px] font-mono text-gold/60 uppercase tracking-widest mb-6 px-1">Themenbereich</p>
+                          <p className="text-[11px] font-mono text-gold/80 uppercase tracking-widest mb-4 px-1">Themenbereich</p>
                           <div className="flex flex-wrap gap-3">
                             {CATEGORIES.map((cat) => (
                               <button
                                 key={cat.value}
                                 type="button"
+                                aria-pressed={state.questionCategory === cat.value}
                                 onClick={() => setState((s) => ({ ...s, questionCategory: cat.value }))}
                                 className={cn(
                                    "text-xs font-mono px-6 py-3 rounded-xl transition-all",
                                    state.questionCategory === cat.value
                                      ? "crystal-chip crystal-chip-active text-gold"
-                                     : "crystal-chip text-text-muted hover:text-text-secondary"
+                                     : "crystal-chip text-text-secondary hover:text-text"
                                 )}
                               >
                                 {cat.label}
@@ -434,14 +639,27 @@ export default function ReadingPage() {
                         <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
                           <Button
                             onClick={submitQuestion}
-                            disabled={state.question.trim().length < 5}
+                            disabled={!questionMinMet}
                             className="w-full sm:w-auto min-w-[200px] h-14 text-lg"
                           >
-                            Kontinuieren
+                            Weiter
                           </Button>
-                          <div className="flex items-center gap-2 text-[11px] text-text-muted italic max-w-xs">
-                             <Info className="w-4 h-4 shrink-0" />
-                             Symbolische Reflexion als Brücke zur Selbsterkenntnis.
+                          <div className="flex flex-col gap-1">
+                            <p
+                              id="question-counter"
+                              className={cn(
+                                "text-[11px]",
+                                questionMinMet ? "text-text-muted" : "text-text-secondary"
+                              )}
+                            >
+                              {!questionMinMet
+                                ? "Noch kurze Sätze genügen — mindestens 5 Zeichen."
+                                : `${500 - state.question.length} Zeichen verbleibend`}
+                            </p>
+                            <div className="flex items-center gap-2 text-[11px] text-text-muted italic max-w-xs">
+                               <Info className="w-4 h-4 shrink-0" />
+                               Symbolische Reflexion als Brücke zur Selbsterkenntnis.
+                            </div>
                           </div>
                         </div>
                       </Panel>
@@ -452,18 +670,24 @@ export default function ReadingPage() {
                   {state.step === "birth" && (
                     <motion.div
                       key="birth"
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
+                      exit={{ opacity: 0, y: -16 }}
                     >
                       <Panel className="p-5 sm:p-8 lg:p-12">
                          <div className="flex items-center gap-4 mb-6">
                             <div className="w-10 h-10 rounded-full border border-gold/20 flex items-center justify-center">
                                <Sparkles className="w-5 h-5 text-gold" />
                             </div>
-                            <h2 className="font-display text-3xl sm:text-4xl text-text heading-glow">Himmelsmechanik</h2>
+                            <h2
+                              ref={stepHeadingRef}
+                              tabIndex={-1}
+                              className="font-display text-3xl sm:text-4xl text-text heading-glow focus:outline-none"
+                            >
+                              Himmelsmechanik
+                            </h2>
                         </div>
-                        
+
                         <p className="text-xl text-text-secondary leading-relaxed mb-6 max-w-2xl">
                           Möchtest du dein persönliches Geburtshoroskop als zusätzliche Symbolschicht in die Deutung einfließen lassen?
                         </p>
@@ -471,12 +695,15 @@ export default function ReadingPage() {
                         <div className="bg-gold/5 border border-gold/10 rounded-2xl p-6 mb-10">
                           <h3 className="text-xs font-mono text-gold uppercase tracking-widest mb-3">Warum Geburtsdaten?</h3>
                           <p className="text-sm text-text-secondary leading-relaxed">
-                            Das Geburtsdatum ermöglicht es, die kosmische Signatur des Augenblicks deiner Geburt mit der Symbolik der Karten zu verweben. 
+                            Das Geburtsdatum ermöglicht es, die kosmische Signatur des Augenblicks deiner Geburt mit der Symbolik der Karten zu verweben.
                             So entsteht ein tiefgehenderes, auf dich persönlich zugeschnittenes Spiegelbild deiner aktuellen Situation und deiner inneren Zeitqualität.
+                          </p>
+                          <p className="text-xs text-text-muted leading-relaxed mt-3">
+                            Deine Angaben werden nur für diese Berechnung genutzt — die Nutzung bleibt auch ohne Account anonym.
                           </p>
                         </div>
 
-                        <label className="group flex items-center gap-6 p-6 rounded-2xl border border-gold/10 hover:border-gold/30 hover:bg-gold/5 transition-all cursor-pointer mb-10 bg-surface-raised/20">
+                        <label className="group flex items-center gap-6 p-6 rounded-2xl border border-gold/10 hover:border-gold/30 hover:bg-gold/5 transition-all cursor-pointer mb-10 bg-surface-raised/20 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-gold-soft">
                           <div className={cn(
                              "w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center",
                              state.includeBirth ? 'bg-gold border-gold shadow-[0_0_15px_rgba(200,164,93,0.4)]' : 'border-gold/30'
@@ -487,49 +714,63 @@ export default function ReadingPage() {
                             type="checkbox"
                             checked={state.includeBirth}
                             onChange={(e) => setState((s) => ({ ...s, includeBirth: e.target.checked }))}
-                            className="hidden"
+                            className="sr-only"
                           />
                           <div className="flex flex-col">
                              <span className="text-lg text-text group-hover:text-gold transition-colors">Geburtsdaten präzisieren</span>
-                             <span className="text-xs text-text-muted uppercase font-mono tracking-widest mt-1">Aktiviert Astronomische Berechnung</span>
+                             <span className="text-xs text-text-muted mt-1">Verwebt dein Geburtshoroskop mit den Karten</span>
                           </div>
                         </label>
 
                         {state.includeBirth && (
-                          <motion.div 
+                          <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}
                             className="flex flex-col gap-8 mb-12"
                           >
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                               <div className="space-y-3">
-                                <label className="text-[10px] font-mono text-gold/60 uppercase tracking-[0.3em] px-1">Geburtsdatum</label>
+                                <label htmlFor="birth-date" className="block text-[11px] font-mono text-gold/80 uppercase tracking-[0.3em] px-1">Geburtsdatum</label>
                                 <input
+                                  id="birth-date"
                                   type="date"
                                   value={state.birthDate}
+                                  max={todayMax}
+                                  min="1900-01-01"
                                   onChange={(e) => setState((s) => ({ ...s, birthDate: e.target.value }))}
                                   className="w-full glass-input rounded-xl px-6 py-4 text-lg text-text"
                                 />
                               </div>
                               <div className="space-y-3">
-                                <label className="text-[10px] font-mono text-gold/60 uppercase tracking-[0.3em] px-1">Geburtszeit (Optional)</label>
+                                <label htmlFor="birth-time" className="block text-[11px] font-mono text-gold/80 uppercase tracking-[0.3em] px-1">Geburtszeit (Optional)</label>
                                 <input
+                                  id="birth-time"
                                   type="time"
                                   value={state.birthTime}
                                   onChange={(e) => setState((s) => ({ ...s, birthTime: e.target.value }))}
+                                  aria-describedby="birth-time-hint"
                                   className="w-full glass-input rounded-xl px-6 py-4 text-lg text-text"
                                 />
+                                <p id="birth-time-hint" className="text-xs text-text-muted leading-relaxed">
+                                  Ohne Geburtszeit rechnen wir mit 12:00 Uhr mittags — Aszendent und Häuser sind dann ungenau, Sonne und Mond bleiben verlässlich.
+                                </p>
                               </div>
                             </div>
                             <div className="space-y-3">
-                              <label className="text-[10px] font-mono text-gold/60 uppercase tracking-[0.3em] px-1">Geburtsort</label>
+                              <label htmlFor="birth-city" className="block text-[11px] font-mono text-gold/80 uppercase tracking-[0.3em] px-1">Geburtsort</label>
                               <input
+                                id="birth-city"
                                 type="text"
                                 value={state.birthCity}
                                 onChange={(e) => setState((s) => ({ ...s, birthCity: e.target.value }))}
                                 placeholder="z.B. Berlin, Deutschland"
                                 className="w-full glass-input rounded-xl px-6 py-4 text-lg text-text"
                               />
+                              {state.geoWarning && (
+                                <p className="text-xs text-gold/90 leading-relaxed" role="status">
+                                  {state.geoWarning}
+                                </p>
+                              )}
                             </div>
                           </motion.div>
                         )}
@@ -542,14 +783,19 @@ export default function ReadingPage() {
                           >
                             {state.includeBirth ? "Berechnen & Weiter" : "Ohne Horoskop fortfahren"}
                           </Button>
-                          <Button 
-                            onClick={() => setState((s) => ({ ...s, step: "question" }))} 
+                          <Button
+                            onClick={() => setState((s) => ({ ...s, step: "question" }))}
                             variant="ghost"
                             className="w-full sm:w-auto h-14 px-8"
                           >
                             <ArrowLeft className="w-4 h-4 mr-3" /> Zurück
                           </Button>
                         </div>
+                        {state.includeBirth && !state.birthDate && (
+                          <p className="text-[11px] text-text-secondary mt-4" aria-live="polite">
+                            Für die Berechnung braucht es ein Geburtsdatum — oder du fährst ohne Horoskop fort.
+                          </p>
+                        )}
                       </Panel>
                     </motion.div>
                   )}
@@ -558,16 +804,22 @@ export default function ReadingPage() {
                   {state.step === "stellar" && (
                     <motion.div
                       key="stellar"
-                      initial={{ opacity: 0, scale: 0.95 }}
+                      initial={{ opacity: 0, scale: 0.97 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 1.05 }}
-                      className="flex flex-col items-center gap-12 py-8"
+                      exit={{ opacity: 0, scale: 1.03 }}
+                      className="flex flex-col items-center gap-10 py-8"
                     >
                       <div className="text-center space-y-4">
-                        <h2 className="font-display text-4xl sm:text-5xl text-text heading-glow">Das Energiefeld</h2>
+                        <h2
+                          ref={stepHeadingRef}
+                          tabIndex={-1}
+                          className="font-display text-4xl sm:text-5xl text-text heading-glow focus:outline-none"
+                        >
+                          Das Energiefeld
+                        </h2>
                         <p className="text-lg text-text-secondary max-w-xl mx-auto leading-relaxed">
-                          Gleite durch das kosmische Feld und wähle drei Resonanzpunkte.
-                          Jeder Punkt birgt eine Karte — vertraue deiner Intuition.
+                          Drei Zonen — Gegenwart, Spannung, Impuls. Tippe in eine Zone und ein Licht
+                          entzündet deine Karte. Du kannst jede Zone wieder abwählen, bis du bestätigst.
                         </p>
                       </div>
 
@@ -575,6 +827,7 @@ export default function ReadingPage() {
                         <StellarField
                           cardIds={state.shuffledDeck}
                           onComplete={handleStellarComplete}
+                          error={state.error}
                         />
                       ) : (
                         <div className="h-[400px] flex items-center justify-center">
@@ -588,13 +841,19 @@ export default function ReadingPage() {
                   {state.step === "drawing" && (
                     <motion.div
                       key="drawing"
-                      initial={{ opacity: 0, scale: 0.95 }}
+                      initial={{ opacity: 0, scale: 0.97 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 1.05 }}
-                      className="flex flex-col items-center gap-16 py-8"
+                      exit={{ opacity: 0, scale: 1.03 }}
+                      className="flex flex-col items-center gap-12 py-8"
                     >
                       <div className="text-center space-y-4">
-                         <h2 className="font-display text-4xl sm:text-5xl text-text">Materialisierung</h2>
+                         <h2
+                           ref={stepHeadingRef}
+                           tabIndex={-1}
+                           className="font-display text-4xl sm:text-5xl text-text heading-glow focus:outline-none"
+                         >
+                           Materialisierung
+                         </h2>
                          <p className="text-xl text-text-secondary max-w-xl mx-auto leading-relaxed">
                            {state.cards.length === 0
                              ? "Deine Resonanzpunkte werden zu Karten..."
@@ -606,35 +865,33 @@ export default function ReadingPage() {
 
                       {state.chart && (
                         <motion.div
-                          initial={{ opacity: 0, y: -20 }}
+                          initial={{ opacity: 0, y: -16 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="w-full max-w-2xl mx-auto -mb-8"
+                          className="w-full max-w-2xl mx-auto -mb-4"
                         >
                           <Panel className="bg-surface-raised/30 border-gold/10 py-6 px-8 relative overflow-hidden group">
-                            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(200,164,93,0.03),transparent)] pointer-events-none" />
-                            
                             <div className="flex flex-col items-center gap-4 relative z-10">
                                <div className="flex flex-col items-center gap-2 mb-2">
-                                  <span className="text-[10px] font-mono text-gold/60 uppercase tracking-[0.3em]">Radix-Signatur</span>
+                                  <span className="text-[11px] font-mono text-gold/80 uppercase tracking-[0.3em]">Radix-Signatur</span>
                                   <div className="w-12 h-[1px] bg-gold/20" />
                                </div>
 
                                <div className="flex flex-wrap justify-center gap-8 items-center">
                                   <div className="flex flex-col items-center gap-2">
-                                    <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Sonne</span>
+                                    <span className="text-[10px] font-mono text-text-muted uppercase tracking-widest">Sonne</span>
                                     <SymbolChip variant="gold" className="px-4 py-1">
                                       {state.chart.planets.find(p => p.name === "Sonne")?.sign}
                                     </SymbolChip>
                                   </div>
                                   <div className="flex flex-col items-center gap-2">
-                                    <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Mond</span>
+                                    <span className="text-[10px] font-mono text-text-muted uppercase tracking-widest">Mond</span>
                                     <SymbolChip variant="gold" className="px-4 py-1">
                                       {state.chart.planets.find(p => p.name === "Mond")?.sign}
                                     </SymbolChip>
                                   </div>
                                   {state.chart.ascendant && (
                                     <div className="flex flex-col items-center gap-2">
-                                      <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Aszendent</span>
+                                      <span className="text-[10px] font-mono text-text-muted uppercase tracking-widest">Aszendent</span>
                                       <SymbolChip variant="gold" className="px-4 py-1">
                                         {state.chart.ascendant.sign}
                                       </SymbolChip>
@@ -646,19 +903,18 @@ export default function ReadingPage() {
                         </motion.div>
                       )}
 
-                      <div className="relative w-full flex justify-center py-12">
+                      <div className="relative w-full flex justify-center py-10">
                         {/* Visual Connector Lines (Kinetic) */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-gold/10 to-transparent z-0" />
-                        
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-gold/10 to-transparent z-0" aria-hidden="true" />
+
                         {state.cards.length > 0 ? (
-                          <div className="flex flex-wrap justify-center gap-12 sm:gap-20 relative z-10">
+                          <div className="flex flex-nowrap justify-center items-start gap-4 sm:gap-10 lg:gap-14 relative z-10">
                             {state.cards.map((card, i) => (
                               <motion.div
                                 key={card.id}
-                                initial={{ opacity: 0, y: 30 }}
+                                initial={{ opacity: 0, y: 24 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.2 }}
-                                className="scale-105 sm:scale-110"
+                                transition={{ delay: i * 0.15, duration: 0.6, ease: "easeOut" }}
                               >
                                 <TarotCard
                                   name={card.name}
@@ -680,18 +936,18 @@ export default function ReadingPage() {
                       </div>
 
                       <AnimatePresence>
-                        {allRevealed && (
-                          <motion.div 
+                        {allRevealed && state.cards.length > 0 && (
+                          <motion.div
                             key="start-button-reveal"
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="flex flex-col items-center gap-6 mt-8"
+                            className="flex flex-col items-center gap-5 mt-4"
                           >
-                            <Button onClick={generateAIReading} className="px-16 h-16 text-xl shadow-[0_0_30px_rgba(200,164,93,0.3)]">
+                            <Button onClick={generateAIReading} className="px-14 h-16 text-xl shadow-[0_0_30px_rgba(200,164,93,0.3)]">
                               Synthese starten
                             </Button>
-                            <p className="text-xs font-mono text-gold/60 uppercase tracking-[0.4em] text-center max-w-sm">
-                              Synthetisiere Symbol-Vektoren
+                            <p className="text-xs text-text-muted text-center max-w-sm">
+                              Die KI verwebt deine drei Karten mit deinem Geburtskontext.
                             </p>
                           </motion.div>
                         )}
@@ -699,197 +955,308 @@ export default function ReadingPage() {
                     </motion.div>
                   )}
 
-                  {/* Step 4: Generating — Immersive Violet Stage */}
+                  {/* Step 5: Generating — Immersive Violet Stage */}
                   {state.step === "generating" && (
                     <motion.div
                       key="generating"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="flex flex-col items-center justify-center min-h-[75vh] relative overflow-hidden"
+                      className="flex flex-col items-center justify-center min-h-[70vh] relative overflow-hidden"
                     >
-                      {/* Full-bleed violet atmosphere */}
-                      <div className="absolute inset-0 synthesis-glow pointer-events-none" />
-                      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(124,92,255,0.08),transparent_70%)] pointer-events-none" />
+                      {/* Full-bleed violet atmosphere — eine Ebene genügt */}
+                      <div className="absolute inset-0 synthesis-glow pointer-events-none" aria-hidden="true" />
 
-                      <div className="relative z-10 flex flex-col items-center text-center px-4">
+                      <div className="relative z-10 flex flex-col items-center text-center px-4" aria-live="polite">
                         <motion.div
-                          initial={{ opacity: 0, scale: 0.8 }}
+                          initial={{ opacity: 0, scale: 0.92 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 1.2, ease: "easeOut" }}
+                          transition={{ duration: 1, ease: "easeOut" }}
                         >
-                          <CrystalShard variant="violet" synthesizing className="w-56 h-56 sm:w-72 sm:h-72 mb-12" />
+                          <CrystalShard variant="violet" synthesizing className="w-56 h-56 sm:w-72 sm:h-72 mb-10" />
                         </motion.div>
 
-                        <motion.h2
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.4, duration: 0.8 }}
-                          className="font-display text-4xl sm:text-5xl lg:text-6xl text-gradient-violet mb-6 uppercase tracking-widest"
+                        <h2
+                          ref={stepHeadingRef}
+                          tabIndex={-1}
+                          className="font-display text-4xl sm:text-5xl lg:text-6xl text-gradient-violet mb-6 uppercase tracking-widest focus:outline-none"
                         >
                           Synthese läuft
-                        </motion.h2>
+                        </h2>
 
-                        <motion.p
-                          initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.8, duration: 0.8 }}
-                          className="text-xl sm:text-2xl text-text-secondary max-w-lg leading-relaxed font-serif italic mb-16"
-                        >
+                        <p className="text-xl sm:text-2xl text-text-secondary max-w-lg leading-relaxed font-serif mb-8">
                           Der Kristall bricht das Licht deiner Symbole in ein kohärentes Spiegelbild...
-                        </motion.p>
+                        </p>
 
-                        {/* Pseudofortschritt */}
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 1.2, duration: 0.6 }}
-                          className="w-full max-w-md space-y-4"
-                        >
-                          <div className="h-[2px] w-full bg-violet/10 rounded-full overflow-hidden relative">
-                            <div className="progress-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-violet/40 to-transparent" />
-                          </div>
-                          <div className="flex justify-between text-[10px] font-mono text-violet/40 uppercase tracking-[0.3em]">
-                            <span>Symbol-Vektoren laden</span>
-                            <span className="animate-pulse">...</span>
-                          </div>
-                        </motion.div>
+                        {/* Ehrliche Wartezeit: keine Fake-Prozent, aber eine Erwartung und ein Status */}
+                        <div className="w-full max-w-md space-y-4" role="status">
+                          <div className="h-[2px] w-full bg-violet/10 rounded-full overflow-hidden relative progress-shimmer" />
+                          <p className="text-sm text-text-secondary">
+                            Deine Deutung wird gewoben — das dauert meist 20 bis 40 Sekunden.
+                            Bitte lasse den Tab dabei offen.
+                          </p>
+                        </div>
                       </div>
                     </motion.div>
                   )}
 
-                  {/* Step 5: Result (Main Content) */}
+                  {/* Step 6: Result */}
                   {state.step === "result" && (
                     <motion.div
                       key="result"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="space-y-12"
+                      className="space-y-10"
                     >
-                      <section className="relative">
-                        <div className="bg-violet-deep/20 border-l border-violet/30 pl-8 mb-8 py-2">
-                           <div className="flex items-center gap-3 mb-2">
-                              <div className="w-2 h-2 rounded-full bg-violet shadow-[0_0_10px_rgba(124,92,255,0.8)]" />
-                              <h3 className="text-[10px] font-mono text-violet tracking-[0.3em] uppercase">Interpretation Aktiv</h3>
-                           </div>
-                           <p className="text-[10px] font-mono text-violet/40 uppercase tracking-widest">
-                             Synthese aktiv
-                           </p>
-                        </div>
-                        
-                        {state.result ? (
-                          <KineticBlueprint text={state.result.text} cards={state.cards} />
-                        ) : (
-                          <Panel className="border-danger-muted/30 py-12 text-center">
-                             <p className="text-danger-muted font-serif italic text-lg mb-6">
-                               Die symbolische Verbindung konnte nicht stabilisiert werden.
-                             </p>
-                             <Button onClick={() => setState(INITIAL_STATE)} variant="secondary">Ritual Neustarten</Button>
-                          </Panel>
-                        )}
+                      {isCrisis ? (
+                        /* Krisenfall: ruhige, klare Hilfe — kein mystischer Rahmen, keine Karten, kein Feedback. */
+                        <Panel className="border-danger-muted/40 bg-bg/60 max-w-3xl mx-auto">
+                          <div className="space-y-8">
+                            <div className="flex items-center gap-3">
+                              <div className="w-1.5 h-1.5 rounded-full bg-danger-muted shrink-0" />
+                              <h2 className="font-display text-3xl text-text">Hilfe ist näher, als du denkst</h2>
+                            </div>
+                            <p className="text-lg text-text-secondary leading-relaxed">
+                              {CRISIS_INTRO}
+                            </p>
+                            <ul className="space-y-5">
+                              {CRISIS_LINES.map((line) => (
+                                <li key={line.country} className="border border-danger-muted/20 rounded-2xl p-5">
+                                  <p className="text-[11px] font-mono text-text-muted uppercase tracking-widest mb-2">
+                                    {line.country} · {line.serviceName}
+                                  </p>
+                                  <a
+                                    href={line.telHref}
+                                    className="inline-flex items-center gap-3 text-2xl font-display text-text hover:text-gold-soft transition-colors"
+                                  >
+                                    <Phone className="w-5 h-5 text-danger-muted" aria-hidden="true" />
+                                    {line.number}
+                                  </a>
+                                  {line.hint && <p className="text-sm text-text-muted mt-1">{line.hint}</p>}
+                                </li>
+                              ))}
+                            </ul>
+                            <p className="text-lg text-text-secondary leading-relaxed">{CRISIS_OUTRO}</p>
+                            <div className="pt-4 border-t border-danger-muted/20">
+                              <button
+                                type="button"
+                                onClick={resetRitual}
+                                className="text-sm text-text-muted hover:text-text transition-colors"
+                              >
+                                Zurück zur Startseite
+                              </button>
+                            </div>
+                          </div>
+                        </Panel>
+                      ) : (
+                        <div className="mx-auto w-full max-w-3xl">
+                          {/* KI-Transparenz: Label, Rahmen und Quellen — Pflicht nach design.md */}
+                          <section>
+                            <div className="border-l-2 border-violet/40 pl-6 mb-2 py-1">
+                               <div className="flex items-center gap-3 mb-2">
+                                  <div className="w-2 h-2 rounded-full bg-violet shadow-[0_0_10px_rgba(124,92,255,0.8)]" aria-hidden="true" />
+                                  <h2
+                                    ref={stepHeadingRef}
+                                    tabIndex={-1}
+                                    className="text-xs font-mono text-violet-soft tracking-[0.3em] uppercase focus:outline-none"
+                                  >
+                                    KI-generierte Deutung
+                                  </h2>
+                               </div>
+                               <p className="text-sm text-text-secondary leading-relaxed max-w-2xl">
+                                 Diese Deutung wurde von KI erzeugt und verbindet die unten genannten Symbolinformationen.
+                                 Sie ist als symbolische Reflexion zu lesen und ersetzt keine professionelle Beratung.
+                               </p>
+                            </div>
 
-                         <div className="flex items-center gap-6 mt-16 pt-8 border-t border-violet/10 text-[9px] font-mono text-violet/40 uppercase tracking-widest">
-                           <div className="flex items-center gap-2">
-                              <LayoutGrid className="w-3 h-3" />
-                              <span>Blueprint Engine v2.4</span>
-                           </div>
-                           <div className="flex items-center gap-2">
-                              <Sparkles className="w-3 h-3" />
-                              <span>Symbolische Reflexion</span>
-                           </div>
-                         </div>
-                      </section>
+                            {/* Quellen: was tatsächlich in die Deutung eingeflossen ist */}
+                            <div className="mt-6 space-y-4">
+                              {state.question.trim() && (
+                                <div className="flex flex-col gap-2">
+                                  <span className="text-[10px] font-mono text-text-muted uppercase tracking-widest">Deine Frage</span>
+                                  <p className="text-base text-text font-serif leading-relaxed">{`„${state.question.trim()}“`}</p>
+                                </div>
+                              )}
+                              <div className="flex flex-col gap-2">
+                                <span className="text-[10px] font-mono text-text-muted uppercase tracking-widest">Deine Karten</span>
+                                <div className="flex flex-wrap gap-2">
+                                  {state.cards.map((card) => (
+                                    <SymbolChip key={card.id} variant="gold">
+                                      {card.name.split("–")[0].trim()} · {card.position} · {card.upright ? "aufrecht" : "umgekehrt"}
+                                    </SymbolChip>
+                                  ))}
+                                </div>
+                              </div>
+                              {state.chart ? (
+                                <div className="flex flex-col gap-2">
+                                  <span className="text-[10px] font-mono text-text-muted uppercase tracking-widest">Dein Radix</span>
+                                  <div className="flex flex-wrap gap-2">
+                                    <SymbolChip variant="violet">
+                                      Sonne {state.chart.planets.find(p => p.name === "Sonne")?.sign}
+                                    </SymbolChip>
+                                    <SymbolChip variant="violet">
+                                      Mond {state.chart.planets.find(p => p.name === "Mond")?.sign}
+                                    </SymbolChip>
+                                    {state.chart.ascendant && (
+                                      <SymbolChip variant="violet">Aszendent {state.chart.ascendant.sign}</SymbolChip>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : state.geoWarning ? (
+                                <p className="text-sm text-gold/90 leading-relaxed" role="status">
+                                  {state.geoWarning}
+                                </p>
+                              ) : null}
+                            </div>
+                          </section>
 
-                      {/* Follow-up Chat Thread */}
-                      {state.result && (
-                        <div className="mt-20 pt-20 border-t border-gold/10">
-                           <div className="flex items-center gap-3 mb-8">
-                              <MessageSquare className="w-4 h-4 text-gold/60" />
-                              <h3 className="text-[10px] font-mono text-gold uppercase tracking-[0.3em]">Tiefer blicken</h3>
-                           </div>
+                          {state.result ? (
+                            <>
+                              <KineticBlueprint text={state.result.text} cards={state.cards} />
 
-                           <div className="space-y-6 mb-8">
-                             {state.followupMessages.map((msg, i) => (
-                               <motion.div
-                                 key={i}
-                                 initial={{ opacity: 0, y: 10 }}
-                                 animate={{ opacity: 1, y: 0 }}
-                                 className={cn(
-                                   "flex",
-                                   msg.role === "user" ? "justify-end" : "justify-start"
-                                 )}
-                               >
-                                <div className={cn(
-                                    "max-w-[80%] px-6 py-4 rounded-2xl glass-bubble",
-                                    msg.role === "user"
-                                      ? "glass-bubble-user text-text"
-                                      : "glass-bubble-ai text-text-secondary font-serif italic leading-[1.8]"
-                                  )}>
-                                   {msg.role === "assistant" ? (
-                                     <div className="space-y-3">
-                                       {msg.content.split("\n").map((line, li) => {
-                                         const t = line.trim();
-                                         if (!t) return null;
-                                         const clean = t.replace(/\*\*/g, '');
-                                         return <p key={li}>{clean}</p>;
-                                       })}
+                              {/* Siegel-Moment: das Reading ist da, wo man es wiederfindet */}
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-4 pt-8 border-t border-gold/10" role="status">
+                                <motion.span
+                                  initial={{ scale: 0, rotate: -45 }}
+                                  animate={{ scale: 1, rotate: 45 }}
+                                  transition={{ type: "spring", stiffness: 200, damping: 18, delay: 0.2 }}
+                                  className="w-4 h-4 shrink-0 border border-gold bg-gold/20 shadow-[0_0_12px_rgba(200,164,93,0.4)]"
+                                  aria-hidden="true"
+                                />
+                                <div className="flex-1">
+                                  <p className="text-sm text-text">In deinem Grimoire vermerkt.</p>
+                                  <p className="text-xs text-text-muted mt-0.5">
+                                    {new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", year: "numeric" }).format(new Date())}
+                                    {" "}· automatisch in deinem Archiv gespeichert
+                                  </p>
+                                </div>
+                                <Link
+                                  href="/readings"
+                                  className="inline-flex items-center gap-2 text-sm text-gold hover:text-gold-soft transition-colors py-2"
+                                >
+                                  Im Archiv öffnen
+                                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                                </Link>
+                              </div>
+                            </>
+                          ) : (
+                            <Panel className="border-danger-muted/30 py-12 text-center">
+                               <p className="text-danger-muted font-serif italic text-lg mb-6">
+                                 Die symbolische Verbindung konnte nicht stabilisiert werden.
+                               </p>
+                               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                                 <Button onClick={generateAIReading} variant="secondary">Erneut versuchen</Button>
+                                 <Button onClick={() => setState((s) => ({ ...s, step: "drawing" }))} variant="ghost">
+                                   Zurück zu den Karten
+                                 </Button>
+                               </div>
+                            </Panel>
+                          )}
+
+                          {/* Follow-up Chat Thread */}
+                          {state.result && (
+                            <div className="mt-6 pt-10 border-t border-gold/10">
+                               <div className="flex items-center gap-3 mb-6">
+                                  <MessageSquare className="w-4 h-4 text-gold/80" aria-hidden="true" />
+                                  <h3 className="text-xs font-mono text-gold uppercase tracking-[0.3em]">Tiefer blicken</h3>
+                               </div>
+
+                               <div className="space-y-6 mb-6">
+                                 {state.followupMessages.map((msg, i) => (
+                                   <motion.div
+                                     key={i}
+                                     initial={{ opacity: 0, y: 8 }}
+                                     animate={{ opacity: 1, y: 0 }}
+                                     className={cn(
+                                       "flex",
+                                       msg.role === "user" ? "justify-end" : "justify-start"
+                                     )}
+                                   >
+                                    <div className={cn(
+                                        "max-w-[85%] px-6 py-4 rounded-2xl glass-bubble",
+                                        msg.role === "user"
+                                          ? "glass-bubble-user text-text"
+                                          : "glass-bubble-ai text-text-secondary font-serif leading-[1.85]"
+                                      )}>
+                                       {msg.role === "assistant" ? (
+                                         <div className="space-y-3">
+                                           {msg.content.split("\n").map((line, li) => {
+                                             const t = line.trim();
+                                             if (!t) return null;
+                                             return <p key={li}>{renderInline(t)}</p>;
+                                           })}
+                                         </div>
+                                       ) : msg.content}
                                      </div>
-                                   ) : msg.content}
-                                 </div>
-                               </motion.div>
-                             ))}
-                              {state.followupLoading && (
-                                 <div className="flex justify-start">
-                                   <div className="glass-bubble glass-bubble-ai px-6 py-4 rounded-2xl">
-                                     <CrystalSpinner className="scale-75" />
-                                   </div>
+                                   </motion.div>
+                                 ))}
+                                  {state.followupLoading && (
+                                     <div className="flex justify-start">
+                                       <div className="glass-bubble glass-bubble-ai px-6 py-4 rounded-2xl" role="status" aria-label="Antwort wird generiert">
+                                         <CrystalSpinner className="scale-75" />
+                                       </div>
+                                     </div>
+                                   )}
+                               </div>
+
+                                <div className="flex gap-4">
+                                  <input
+                                     type="text"
+                                     value={state.followupQuestion}
+                                     onChange={(e) => setState((s) => ({ ...s, followupQuestion: e.target.value, followupError: null }))}
+                                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && state.followupQuestion.trim().length >= 3 && !state.followupLoading && submitFollowup()}
+                                     placeholder="Stelle eine Nachfrage..."
+                                     aria-label="Nachfrage zur Deutung"
+                                     className="flex-1 glass-input rounded-2xl px-6 py-4 text-lg text-text"
+                                   />
+                                  <Button
+                                    onClick={submitFollowup}
+                                    disabled={state.followupQuestion.trim().length < 3 || state.followupLoading}
+                                    className="px-8 h-auto"
+                                  >
+                                    {state.followupLoading ? <CrystalSpinner className="scale-75" /> : "Senden"}
+                                  </Button>
+                                </div>
+                                {typeof state.followupsRemaining === "number" && (
+                                  <p className="text-xs text-text-muted mt-3" aria-live="polite">
+                                    Noch {state.followupsRemaining} {state.followupsRemaining === 1 ? "Nachfrage" : "Nachfragen"} heute.
+                                  </p>
+                                )}
+                               {state.followupError && (
+                                 <div className="mt-3 space-y-3">
+                                   <p className="text-sm text-danger-muted" role="alert">{state.followupError}</p>
+                                   {state.followupError.toLowerCase().includes("follow-up") && (
+                                     <Link href="/pricing" className="inline-flex items-center gap-2 text-sm text-gold hover:text-gold-soft">
+                                       Plus entdecken <ArrowRight className="w-3.5 h-3.5" />
+                                     </Link>
+                                   )}
                                  </div>
                                )}
-                           </div>
-
-                            <div className="flex gap-4">
-                              <input
-                                 type="text"
-                                 value={state.followupQuestion}
-                                 onChange={(e) => setState((s) => ({ ...s, followupQuestion: e.target.value, followupError: null }))}
-                                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && state.followupQuestion.trim().length >= 3 && !state.followupLoading && submitFollowup()}
-                                 placeholder="Stelle eine Nachfrage..."
-                                 className="flex-1 glass-input rounded-2xl px-6 py-4 text-lg text-text"
-                               />
-                              <Button
-                                onClick={submitFollowup}
-                                disabled={state.followupQuestion.trim().length < 3 || state.followupLoading}
-                                className="px-8 h-auto"
-                              >
-                                {state.followupLoading ? <CrystalSpinner className="scale-75" /> : "Senden"}
-                              </Button>
                             </div>
-                           {state.followupError && (
-                             <p className="text-sm text-danger-muted font-mono mt-3">{state.followupError}</p>
-                           )}
+                          )}
+
+                          {/* Footer Section: Feedback & New Ritual */}
+                          <div className="pt-16 border-t border-gold/20 flex flex-col items-center gap-12">
+                             <div className="w-full max-w-2xl">
+                                <h3 className="text-xs font-mono text-gold/80 uppercase tracking-[0.3em] mb-8 text-center">Resonanz</h3>
+                                <Panel className="bg-surface-raised/20">
+                                   <FeedbackForm readingId={state.readingId!} />
+                                </Panel>
+                             </div>
+
+                             <div className="flex flex-col items-center gap-8 w-full max-w-sm">
+                                {/* Secondary: das Reading ist gesichert — der Reset ist kein Verlust mehr */}
+                                <Button onClick={resetRitual} variant="secondary" className="w-full h-14 text-base">
+                                   Neues Ritual beginnen
+                                </Button>
+
+                                <div className="flex justify-center gap-12 w-full">
+                                   <Link href="/" className="text-xs font-mono text-text-secondary hover:text-gold uppercase tracking-[0.2em] transition-colors py-2">Home</Link>
+                                </div>
+                             </div>
+                          </div>
                         </div>
                       )}
-
-                      {/* Footer Section: Feedback & New Ritual */}
-                      <div className="pt-32 border-t-2 border-gold/20 flex flex-col items-center gap-16">
-                         <div className="w-full max-w-2xl">
-                            <h3 className="text-xs font-mono text-gold/60 uppercase tracking-[0.3em] mb-10 text-center">Ritual-Resonanz</h3>
-                            <Panel className="bg-surface-raised/20">
-                               <FeedbackForm readingId={state.readingId!} />
-                            </Panel>
-                         </div>
-
-                         <div className="flex flex-col items-center gap-8 w-full max-w-sm">
-                            <Button onClick={() => setState(INITIAL_STATE)} className="w-full h-16 text-lg shadow-[0_0_30px_rgba(200,164,93,0.1)]">
-                               Neues Ritual beginnen
-                            </Button>
-                            
-                            <div className="flex justify-center gap-12 w-full">
-                               <Link href="/readings" className="text-[10px] font-mono text-text-muted hover:text-gold uppercase tracking-[0.2em] transition-colors">Archiv</Link>
-                               <Link href="/" className="text-[10px] font-mono text-text-muted hover:text-gold uppercase tracking-[0.2em] transition-colors">Home</Link>
-                            </div>
-                         </div>
-                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

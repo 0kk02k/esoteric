@@ -17,7 +17,8 @@ export default function SymbolChip({
   const variants = {
     default: "bg-surface-raised/50 border-gold/10 text-text-muted",
     gold: "bg-gold/10 border-gold/30 text-gold",
-    violet: "bg-violet-deep/20 border-violet/30 text-violet",
+    // violet-soft statt violet: kleiner Mono-Text erreicht mit #7C5CFF kein AA
+    violet: "bg-violet-deep/20 border-violet/30 text-violet-soft",
   };
 
   return (

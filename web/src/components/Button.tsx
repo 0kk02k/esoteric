@@ -32,6 +32,13 @@ export const Button = ({
         "relative h-12 px-8 font-display font-semibold transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden group",
         // Faceted shape: slightly clipped corners via clip-path
         "rounded-lg",
+        // clip-path schneidet UA-Outline und :focus-visible-Outline ab —
+        // der Fokus-Ring läuft deshalb als Inset-Schatten (bleibt sichtbar).
+        // Gold-Primary braucht einen DUNKLEN Ring (gold-soft auf Gold ≈ 1,4:1).
+        "focus-visible:outline-none",
+        variant === "primary"
+          ? "focus-visible:shadow-[inset_0_0_0_2px_rgba(5,5,8,0.9)]"
+          : "focus-visible:shadow-[inset_0_0_0_2px_rgba(224,201,138,0.95)]",
         variant === "primary" && [
           "bg-gradient-to-b from-gold via-gold to-[#a88a3e]",
           "text-background",
