@@ -96,7 +96,8 @@ export async function POST(
 
     let text: string;
     try {
-      const completion = await chatCompletion(messages, { maxTokens: 1000 });
+      // Reasoning-Modell: auch hier muss Reasoning + Antwort ins Budget passen
+      const completion = await chatCompletion(messages, { maxTokens: 4096 });
       text = completion.text.trim();
     } catch (aiError) {
       const message = aiError instanceof Error ? aiError.message : String(aiError);

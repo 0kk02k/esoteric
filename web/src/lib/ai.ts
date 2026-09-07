@@ -88,8 +88,18 @@ export async function chatCompletion(
   }
 
   const data = await response.json();
-  const text = data.choices?.[0]?.message?.content ?? "";
+  const choice = data.choices?.[0];
+  const text = choice?.message?.content ?? "";
   const tokensUsed = (data.usage?.prompt_tokens ?? 0) + (data.usage?.completion_tokens ?? 0);
+
+  // Kimi K3 ist ein Reasoning-Modell: Ist das Token-Budget zu knapp, geht die
+  // Antwort komplett im Nachdenken (reasoning_content) verloren und content
+  // bleibt leer — dann lieber hart failen, als ein leeres Reading zu speichern.
+  if (!text.trim() && choice?.finish_reason === "length") {
+    throw new Error(
+      `Das Modell hat sein Antwortbudget (max_tokens: ${opts.maxTokens}) im Reasoning verbraucht. Bitte versuche es erneut.`,
+    );
+  }
 
   return { text, model: data.model ?? NEBIUS_MODEL, tokensUsed, latencyMs };
 }
@@ -183,12 +193,14 @@ export async function generateReading(req: ReadingRequest): Promise<ReadingRespo
   }
 
   // --- API call ---------------------------------------------------------------
+  // Kimi K3 denkt vor der Antwort (reasoning_content) — das Budget muss
+  // Reasoning UND die langen Deutungsabschnitte tragen.
   const completion = await chatCompletion(
     [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: userMessage },
     ],
-    { maxTokens: 2048 },
+    { maxTokens: 8192 },
   );
   const { text, model, tokensUsed, latencyMs } = completion;
 

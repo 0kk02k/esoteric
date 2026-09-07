@@ -109,7 +109,8 @@ const TOPIC_SUGGESTIONS = [
 ];
 
 const STORAGE_KEY = "eso.reading.state.v1";
-const GENERATE_TIMEOUT_MS = 60_000;
+// Kimi K3 denkt vor der Antwort — gemessene Läufe liegen bei 30–70 s
+const GENERATE_TIMEOUT_MS = 150_000;
 const CREATE_TIMEOUT_MS = 45_000;
 const SHUFFLE_TIMEOUT_MS = 20_000;
 const TIMEOUT_MESSAGE =
@@ -1070,7 +1071,7 @@ export default function ReadingPage() {
                         <div className="w-full max-w-md space-y-4" role="status">
                           <div className="h-[2px] w-full bg-violet/10 rounded-full overflow-hidden relative progress-shimmer" />
                           <p className="text-sm text-text-secondary">
-                            Deine Deutung wird gewoben — das dauert meist 20 bis 40 Sekunden.
+                            Deine Deutung wird gewoben — das dauert meist 20 bis 60 Sekunden.
                             Bitte lasse den Tab dabei offen.
                           </p>
                         </div>
