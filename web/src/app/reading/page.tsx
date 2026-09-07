@@ -13,6 +13,7 @@ import { Button } from "@/components/Button";
 import { KineticBlueprint, renderInline } from "@/components/KineticBlueprint";
 import { CrystalShard } from "@/components/CrystalShard";
 import { CrystalSpinner } from "@/components/CrystalSpinner";
+import { Constellation } from "@/components/Constellation";
 import { Sparkles, ArrowLeft, X, Info, MessageSquare, ArrowRight, Phone } from "lucide-react";
 import type { ReadingResponse } from "@/lib/ai";
 import type { ChartResponse } from "@/lib/astrology";
@@ -1114,15 +1115,18 @@ export default function ReadingPage() {
                             <>
                               <KineticBlueprint text={state.result.text} cards={state.cards} />
 
-                              {/* Siegel-Moment: das Reading ist da, wo man es wiederfindet */}
+                              {/* Siegel-Moment: das Reading ist da, wo man es wiederfindet —
+                                  die Konstellation der Wahl zeichnet sich als Signet */}
                               <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-4 pt-8 border-t border-gold/10" role="status">
-                                <motion.span
-                                  initial={{ scale: 0, rotate: -45 }}
-                                  animate={{ scale: 1, rotate: 45 }}
-                                  transition={{ type: "spring", stiffness: 200, damping: 18, delay: 0.2 }}
-                                  className="w-4 h-4 shrink-0 border border-gold bg-gold/20 shadow-[0_0_12px_rgba(200,164,93,0.4)]"
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.85 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+                                  className="shrink-0"
                                   aria-hidden="true"
-                                />
+                                >
+                                  <Constellation cardIds={state.cards.map((c) => c.id)} className="h-9" />
+                                </motion.div>
                                 <div className="flex-1">
                                   <p className="text-sm text-text">In deinem Grimoire vermerkt.</p>
                                   <p className="text-xs text-text-muted mt-0.5">

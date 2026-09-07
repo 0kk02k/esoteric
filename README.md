@@ -11,6 +11,7 @@ KI-gestuetzte Web-Plattform, die westliche Astrologie, Tarot und generative KI z
 | TypeScript | 6.0.3 |
 | Node.js | 24 LTS |
 | Prisma | 7.x |
+| KI-Provider | Nebius Token Factory (Kimi K3, OpenAI-kompatibel) |
 | Tailwind CSS | v4 |
 | Swiss Ephemeris | swisseph-wasm |
 | Observability | Sentry + Custom Logger |
@@ -33,17 +34,19 @@ Richtung: **The Digital Grimoire** — dunkel, editorial, mystisch. Goldene Taro
 ## Setup
 
 ```bash
-# Frontend
+# Frontend — lokale Entwicklung mit SQLite (kein Postgres nötig)
 cd web
 npm install
-npx prisma migrate dev
-npx tsx prisma/seed.ts        # 78 Tarotkarten seeden
+npm run db:dev:sqlite          # Schema pushen, Client generieren, 78 Tarotkarten seeden
 npm run dev                    # http://localhost:3000
 
 # Umgebungsvariablen (web/.env.local)
-OPENROUTER_API_KEY=your-key-here
-DATABASE_URL=file:./dev.db
+DATABASE_URL="file:./dev.db"   # file: = SQLite-Dev-Modus, sonst Postgres
+NEBIUS_API_KEY=your-key-here   # Nebius Token Factory (Kimi K3)
+# NEBIUS_MODEL=moonshotai/Kimi-K3   # optional, das ist der Default
 ```
+
+> **KI-Provider:** Nebius Token Factory, OpenAI-kompatibel. Default: `moonshotai/Kimi-K3` auf `api.tokenfactory.eu-west2.nebius.com`. HINWEIS: `moonshotai/Kimi-K2.5` wurde im Juni 2026 entfernt ([Deprecation-Notice](https://docs.tokenfactory.nebius.com/june-2026-deprecation-notice)).
 
 ## Status
 

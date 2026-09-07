@@ -33,6 +33,67 @@ export type ReadingResponse = {
 const PROMPT_VERSION = "1.3";
 const SAFETY_VERSION = "1.0";
 
+// ---------------------------------------------------------------------------
+// Nebius Token Factory (OpenAI-kompatibel)
+// Base-URL/Modell sind env-gesteuert. Default: Kimi-K3 auf der eu-west2-Region.
+// HINWEIS: moonshotai/Kimi-K2.5 wurde im Juni 2026 entfernt (Deprecation).
+// ---------------------------------------------------------------------------
+
+const NEBIUS_BASE_URL = (
+  process.env.NEBIUS_BASE_URL || "https://api.tokenfactory.eu-west2.nebius.com/v1"
+).replace(/\/+$/, "");
+export const NEBIUS_MODEL = process.env.NEBIUS_MODEL || "moonshotai/Kimi-K3";
+
+export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
+
+export type ChatCompletionResult = {
+  text: string;
+  model: string;
+  tokensUsed: number;
+  latencyMs: number;
+};
+
+/** Ein einziger Chat-Completion-Pfad für Reading und Follow-up. */
+export async function chatCompletion(
+  messages: ChatMessage[],
+  opts: { maxTokens: number },
+): Promise<ChatCompletionResult> {
+  const apiKey = process.env.NEBIUS_API_KEY;
+  if (!apiKey) {
+    throw new Error("NEBIUS_API_KEY environment variable is not set");
+  }
+
+  const start = Date.now();
+  const response = await fetch(`${NEBIUS_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: NEBIUS_MODEL,
+      messages,
+      max_tokens: opts.maxTokens,
+    }),
+  });
+  const latencyMs = Date.now() - start;
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    const hint =
+      response.status === 404 || response.status === 400
+        ? " (Modell unbekannt? NEBIUS_MODEL prüfen — GET /v1/models listet die gültigen IDs)"
+        : "";
+    throw new Error(`Nebius API error ${response.status}${hint}: ${errorBody}`);
+  }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content ?? "";
+  const tokensUsed = (data.usage?.prompt_tokens ?? 0) + (data.usage?.completion_tokens ?? 0);
+
+  return { text, model: data.model ?? NEBIUS_MODEL, tokensUsed, latencyMs };
+}
+
 const SYSTEM_PROMPT = `Du bist ein profunder, analytischer Interpret von Symbolsystemen (Tarot und westliche Astrologie). Dein Ziel ist es, präzise und nützliche Bedeutungszusammenhänge aufzuzeigen. Vermeide dringend gefällige "AI-Floskeln", generischen Wellness-Jargon oder esoterischen Kitsch.
 
 Deine Grundhaltung:
@@ -53,9 +114,6 @@ Strukturiere deine Antwort zwingend in exakt diese Abschnitte:
 **Reflexionsfragen** -- Exakt drei präzise, herausfordernde Fragen.
 
 **Praxis-Impuls** -- Eine konkrete, pragmatische Handlungsempfehlung.`;
-
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "openai/gpt-5.4";
 
 function buildUserMessage(req: ReadingRequest): string {
   let msg = `Frage: ${req.question}\n\nGezogene Karten:\n`;
@@ -125,40 +183,14 @@ export async function generateReading(req: ReadingRequest): Promise<ReadingRespo
   }
 
   // --- API call ---------------------------------------------------------------
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    throw new Error("OPENROUTER_API_KEY environment variable is not set");
-  }
-
-  const start = Date.now();
-
-  const response = await fetch(OPENROUTER_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: DEFAULT_MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userMessage },
-      ],
-      temperature: 0.8,
-      max_tokens: 2048,
-    }),
-  });
-
-  const latencyMs = Date.now() - start;
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`OpenRouter API error ${response.status}: ${errorBody}`);
-  }
-
-  const data = await response.json();
-  const text = data.choices?.[0]?.message?.content ?? "";
-  const tokensUsed = (data.usage?.prompt_tokens ?? 0) + (data.usage?.completion_tokens ?? 0);
+  const completion = await chatCompletion(
+    [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: userMessage },
+    ],
+    { maxTokens: 2048 },
+  );
+  const { text, model, tokensUsed, latencyMs } = completion;
 
   // --- Safety: check output ---------------------------------------------------
   const outputCheck = checkOutput(text);
@@ -168,7 +200,7 @@ export async function generateReading(req: ReadingRequest): Promise<ReadingRespo
 
   return {
     text,
-    model: data.model ?? DEFAULT_MODEL,
+    model,
     tokensUsed,
     latencyMs,
     promptVersion: PROMPT_VERSION,

@@ -7,11 +7,11 @@ import { Panel } from "@/components/Panel";
 import { Button } from "@/components/Button";
 import ReadingPanel from "@/components/ReadingPanel";
 import TarotCard from "@/components/TarotCard";
+import { Constellation } from "@/components/Constellation";
 import { ArrowLeft, Calendar, User, MessageCircle } from "lucide-react";
-import { motion } from "framer-motion";
 
 type TarotDraw = {
-  card: { name: string; element: string | null; zodiacAssociation: string | null };
+  card: { id?: string; name: string; element: string | null; zodiacAssociation: string | null };
   position: string;
   upright: boolean;
 };
@@ -83,10 +83,17 @@ export default function ReadingDetailPage({ params }: { params: Promise<{ id: st
            
            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
               <div className="space-y-3">
-                 <div className="flex items-center gap-3 text-text-muted">
-                    <Calendar className="w-4 h-4" />
-                    <span className="text-xs font-mono uppercase tracking-widest">
-                       {new Date(reading.createdAt).toLocaleDateString("de-DE", { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                 <div className="flex items-center gap-4 text-text-muted">
+                    {/* Signet der Legung — dieselbe Konstellation wie im Flow */}
+                    <Constellation
+                      cardIds={reading.tarotDraws.map((d) => d.card.id ?? d.card.name)}
+                      className="h-8"
+                    />
+                    <span className="flex items-center gap-3">
+                       <Calendar className="w-4 h-4" />
+                       <span className="text-xs font-mono uppercase tracking-widest">
+                          {new Date(reading.createdAt).toLocaleDateString("de-DE", { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                       </span>
                     </span>
                  </div>
                  <h1 className="font-display text-3xl sm:text-5xl text-text leading-tight">

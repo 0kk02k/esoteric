@@ -3,8 +3,7 @@ import prisma from "@/lib/db";
 import { checkUsageLimit, incrementUsageCount } from "@/lib/usage-limits";
 import { auth } from "@/auth";
 import { logger } from "@/lib/logger";
-
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+import { chatCompletion } from "@/lib/ai";
 
 const FOLLOWUP_SYSTEM_PROMPT = `Du bist ein empathischer, tiefgründiger Berater für symbolische Reflexion. Du knüpfst an eine bereits erstellte Tarot-/Astrologie-Deutung an und beantwortest Nachfragen des Ratsuchenden.
 
@@ -95,32 +94,15 @@ export async function POST(
       { role: "user" as const, content: question },
     ];
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: "API key not configured" }, { status: 500 });
+    let text: string;
+    try {
+      const completion = await chatCompletion(messages, { maxTokens: 1000 });
+      text = completion.text.trim();
+    } catch (aiError) {
+      const message = aiError instanceof Error ? aiError.message : String(aiError);
+      logger.error("ai", "Follow-up generation failed", { readingId: id, error: message });
+      return NextResponse.json({ error: message }, { status: 502 });
     }
-
-    const response = await fetch(OPENROUTER_URL, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-4o-mini",
-        messages,
-        max_tokens: 1000,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.text();
-      console.error("OpenRouter followup error:", response.status, err);
-      return NextResponse.json({ error: `AI error: ${response.status}` }, { status: 502 });
-    }
-
-    const data = await response.json();
-    const text = data.choices?.[0]?.message?.content?.trim() ?? "";
 
     const existingContext = reading.contextJson
       ? JSON.parse(reading.contextJson)

@@ -1,11 +1,13 @@
-import { Pool } from "pg";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../src/generated/prisma/client";
+import { config } from "dotenv";
 
-const connectionString = process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL || "postgresql://dummy:dummy@localhost:5432/dummy";
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+// Der Seed läuft als eigener Prozess (tsx) und lädt .env.local selbst —
+// vor dem ersten createPrismaClient()-Aufruf.
+config({ path: ".env.local" });
+config();
+
+import { createPrismaClient } from "./client-factory";
+
+const prisma = createPrismaClient();
 
 // ---------------------------------------------------------------------------
 // Minor Arcana helpers
@@ -418,9 +420,14 @@ export async function main(): Promise<void> {
 
   console.log(`Prepared ${majorCards.length} Major Arcana + ${minorCards.length} Minor Arcana = ${allCards.length} total cards`);
 
+  // SQLite (Dev) unterstützt skipDuplicates nicht — Idempotenz über Vorab-Check
+  const existingNames = new Set(
+    (await prisma.tarotCard.findMany({ select: { name: true } })).map((c) => c.name),
+  );
+  const freshCards = allCards.filter((c) => !existingNames.has(c.name));
+
   const result = await prisma.tarotCard.createMany({
-    data: allCards,
-    skipDuplicates: true,
+    data: freshCards,
   });
 
   console.log(`Inserted ${result.count} cards (skipped existing duplicates)`);

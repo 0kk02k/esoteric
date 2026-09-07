@@ -24,7 +24,8 @@ Mobile-first Entertainment-Produkt mit Premium-Personalisierung. ESO kombiniert 
 
 ## Operating Context
 
-- **Laufzeit:** Next.js-App in `web/` (`npm run dev`, Port 3000); Python/FastAPI-Dienst in `astro/`; Prisma + PostgreSQL, next-auth v5, Sentry.
+- **Laufzeit:** Next.js-App in `web/` (`npm run dev`, Port 3000); Python/FastAPI-Dienst in `astro/`; Prisma (Postgres in Produktion, SQLite-Dev-Modus via `npm run db:dev:sqlite`), next-auth v5, Sentry.
+- **KI-Provider:** Nebius Token Factory (OpenAI-kompatibel; `NEBIUS_API_KEY`, Default-Modell `moonshotai/Kimi-K3` auf der eu-west2-Region — K2.5 wurde im Juni 2026 vom Provider entfernt).
 - **Zugang:** Geschlossene Beta per Einladung.
 - **Monetarisierung (Stand: simuliert):** Free (3 Readings/Tag, 1 Follow-up), Plus 12 €/Monat (20 Readings/Tag, 5 Follow-ups, Archiv — aktuell über `/api/simulate-plus` simuliert, kein echter Payment-Provider), Premium 49 € einmalig (Report inkl. druckbarem PDF-Grimoire — CTA noch ohne Zielseite).
 - **Datenschutz:** Anonyme Nutzung ohne Account möglich; Account erst nach dem ersten Wertmoment; Consent-Notice im Flow.
@@ -34,7 +35,7 @@ Mobile-first Entertainment-Produkt mit Premium-Personalisierung. ESO kombiniert 
 - Implementierte Funktionen: Reading-Flow, Tarot-Ziehung, Chart-Berechnung, KI-Deutung mit Follow-up-Dialog, Feedback-Erfassung, Archiv, Auth, Nutzungslimits, Safety-System mit Krisenerkennung (medizinisch/rechtlich/finanziell/akute Krise → Hilfe-Panel statt Reading).
 - UI-Sprache Deutsch (`lang="de"`); Preise in Euro; keine i18n-Vorbereitung erforderlich (DACH-Fokus).
 - KI-Transparenz ist Produktanforderung: jede KI-Deutung wird als solche gelabelt, mit Hinweis „symbolische Reflexion, keine professionelle Beratung".
-- Environment: `OPENROUTER_API_KEY` und `DATABASE_URL` erforderlich, damit der KI-Flow läuft.
+- Environment: `NEBIUS_API_KEY` und `DATABASE_URL` erforderlich, damit der KI-Flow läuft.
 
 ## Brand Commitments
 

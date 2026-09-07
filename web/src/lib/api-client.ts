@@ -57,7 +57,7 @@ export function toUserError(err: unknown): { message: string; kind: ErrorKind } 
       return { message: "Dieses Reading konnte nicht gefunden werden. Starte ein neues Ritual.", kind: null };
     if (m.includes("Unauthorized"))
       return { message: "Diese Sitzung gehört nicht zu dir. Starte ein neues Ritual.", kind: null };
-    if (m.includes("API key") || m.includes("AI error"))
+    if (m.includes("API key") || m.includes("AI error") || m.includes("Nebius API error"))
       return { message: "Die Synthese ist an der KI-Schnittstelle gescheitert. Bitte versuche es gleich erneut.", kind: null };
     if (err.status === 0) return { message: m, kind: null };
     return { message: "Etwas ist schiefgelaufen. Bitte versuche es erneut.", kind: null };
