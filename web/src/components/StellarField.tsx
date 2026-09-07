@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Button } from "./Button";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,8 @@ export type Particle = {
 
 type StellarFieldProps = {
   cardIds: string[];
+  /** Karten-ID → Name: das entzündete Licht kann so sagen, welche Karte es ist. */
+  cardNames?: Record<string, string>;
   onComplete: (selectedCardIds: string[]) => void;
   /** Fehler der übergeordneten Materialisierung: gibt das Feld zur Wiederholung frei. */
   error?: string | null;
@@ -124,16 +126,27 @@ function useWideLayout(): boolean {
  * Zone entzündet eines ihrer Lichter und legt damit die Karte dieser Position
  * fest. Die Wahl ist reversibel und wird explizit bestätigt.
  */
-export default function StellarField({ cardIds, onComplete, error }: StellarFieldProps) {
+export default function StellarField({ cardIds, cardNames = {}, onComplete, error }: StellarFieldProps) {
   const [particles] = useState<Particle[]>(() => generateParticles(cardIds));
   const [selectedZones, setSelectedZones] = useState<number[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const wide = useWideLayout();
   const reduceMotion = useReducedMotion();
+  const confirmRef = useRef<HTMLDivElement>(null);
 
   const isComplete = selectedZones.length === REQUIRED_ZONES;
   // Erst bei Bestätigung sperren — und einen Fehler der Materialisierung wieder lösen
   const locked = submitted && !error;
+
+  // Der wichtigste Klick des Rituals darf nicht unter dem Fold liegen
+  useEffect(() => {
+    if (isComplete && !locked) {
+      confirmRef.current?.scrollIntoView({
+        block: "center",
+        behavior: reduceMotion ? "auto" : "smooth",
+      });
+    }
+  }, [isComplete, locked, reduceMotion]);
 
   // Entzündete Lichter: pro Zone deterministisch, in Positionsreihenfolge
   const ignited = useMemo(
@@ -251,7 +264,7 @@ export default function StellarField({ cardIds, onComplete, error }: StellarFiel
               aria-pressed={isSelected}
               aria-label={
                 isSelected
-                  ? `Zone ${zone.label} gewählt (${zone.hint}) — abwählen`
+                  ? `Zone ${zone.label} gewählt${lit && cardNames[lit.id] ? ` — Karte: ${cardNames[lit.id]}` : ""} (${zone.hint}) — abwählen`
                   : `Zone ${zone.label} — Karte für die ${zone.label} wählen (${zone.hint})`
               }
               className={cn(
@@ -315,7 +328,9 @@ export default function StellarField({ cardIds, onComplete, error }: StellarFiel
                     isSelected ? "text-gold" : "text-text-secondary group-hover:text-text"
                   )}
                 >
-                  {zone.label} {isSelected && "· entzündet"}
+                  {zone.label}
+                  {isSelected && lit && cardNames[lit.id] && ` · ${cardNames[lit.id]}`}
+                  {isSelected && !(lit && cardNames[lit.id]) && " · entzündet"}
                 </span>
                 {/* Die Bedeutung der Zone steht auch mobil — das Ritual darf
                     nicht nur auf Desktop erklärbar sein */}
@@ -332,6 +347,7 @@ export default function StellarField({ cardIds, onComplete, error }: StellarFiel
       <AnimatePresence>
         {isComplete && !locked && (
           <motion.div
+            ref={confirmRef}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}

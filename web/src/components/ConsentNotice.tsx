@@ -38,10 +38,23 @@ export function ConsentNotice() {
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
-          className="fixed bottom-6 left-6 right-6 z-[100] flex justify-center pointer-events-none"
+          className="fixed z-[100] flex justify-center pointer-events-none max-sm:bottom-3 max-sm:left-3 max-sm:right-3 sm:bottom-6 sm:left-6 sm:right-6"
         >
-          <Panel className="max-w-xl w-full p-6 sm:p-8 border-gold/30 bg-surface/90 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] pointer-events-auto">
-            <div className="flex flex-col gap-6">
+          <Panel className="max-w-xl w-full p-4 sm:p-8 border-gold/30 bg-surface/90 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] pointer-events-auto">
+            {/* Mobil: schmaler Streifen — Hero und CTA bleiben sichtbar */}
+            <div className="sm:hidden flex items-center gap-3">
+              <Shield className="w-5 h-5 text-gold shrink-0" aria-hidden="true" />
+              <p className="text-xs text-text-secondary leading-snug flex-1">
+                Notwendige Cookies, anonyme Nutzung.{" "}
+                <Link href="/privacy" className="text-gold underline underline-offset-2">Details</Link>
+              </p>
+              <Button onClick={handleAccept} className="h-11 px-4 text-xs shrink-0">
+                Einverstanden
+              </Button>
+            </div>
+
+            {/* Desktop: das volle Panel */}
+            <div className="hidden sm:flex flex-col gap-6">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl rotate-45 border border-gold/20 flex items-center justify-center shrink-0 mt-1">
                   <Shield className="w-5 h-5 text-gold -rotate-45" />

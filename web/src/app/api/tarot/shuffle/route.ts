@@ -9,7 +9,7 @@ import prisma from "@/lib/db";
 export async function GET() {
   try {
     const cards = await prisma.tarotCard.findMany({
-      select: { id: true },
+      select: { id: true, name: true },
     });
 
     // Fisher-Yates shuffle
@@ -21,6 +21,8 @@ export async function GET() {
 
     return NextResponse.json({
       cardIds: shuffled.map((c) => c.id),
+      // Namen mitliefern, damit das entzündete Licht seine Karte benennen kann
+      cards: shuffled.map((c) => ({ id: c.id, name: c.name })),
       total: shuffled.length,
     });
   } catch (error) {

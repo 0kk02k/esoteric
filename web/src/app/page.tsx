@@ -40,7 +40,7 @@ export default function LandingPage() {
               className="order-2 lg:order-1 text-center lg:text-left"
             >
               <div className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gold/15 bg-gold/5">
-                <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-gold" />
                 <span className="text-[10px] font-mono text-gold/80 uppercase tracking-[0.25em]">Digitales Grimoire</span>
               </div>
 
@@ -73,10 +73,11 @@ export default function LandingPage() {
               className="order-1 lg:order-2 flex justify-center lg:justify-end relative"
             >
               <div className="relative w-56 h-56 sm:w-72 sm:h-72 lg:w-96 lg:h-96">
-                <CrystalShard variant="gold" synthesizing={true} className="w-full h-full" />
-                {/* Ambient Aura — vertical ellipse */}
-                <div 
-                  className="absolute inset-0 -z-10 animate-pulse"
+                {/* Ruhemodus: `synthesizing` ist laut design.md der Synthese vorbehalten */}
+                <CrystalShard variant="gold" className="w-full h-full" />
+                {/* Ambient Aura — vertical ellipse, statisch */}
+                <div
+                  className="absolute inset-0 -z-10"
                   style={{
                     background: "radial-gradient(ellipse 45% 65% at 50% 50%, rgba(200,164,93,0.12), transparent 70%)",
                     filter: "blur(60px)",
@@ -87,12 +88,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Floating background elements */}
-        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-full pointer-events-none -z-10">
-          <CrystalShard variant="gold" className="absolute top-[10%] left-[5%] w-32 h-32 opacity-15 blur-sm" />
-          <CrystalShard variant="violet" className="absolute bottom-[20%] right-[10%] w-48 h-48 opacity-10 blur-md" />
-        </div>
-
         {/* Scroll Indicator */}
         <motion.div 
           initial={{ opacity: 0 }}
@@ -100,7 +95,7 @@ export default function LandingPage() {
           transition={{ delay: 1.5, duration: 1 }}
           className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
         >
-          <span className="text-[9px] font-mono text-text-muted uppercase tracking-[0.3em]">Scrollen</span>
+          <span className="text-[10px] font-mono text-text-muted uppercase tracking-[0.3em]">Scrollen</span>
           <div className="scroll-indicator">
             <ChevronDown className="w-5 h-5 text-gold/50" />
           </div>
@@ -170,7 +165,7 @@ export default function LandingPage() {
             
             {/* Elegant disclaimer */}
             <Panel variant="ki" className="max-w-2xl mx-auto py-6 px-8 text-center">
-              <p className="text-[10px] font-mono text-violet/60 uppercase tracking-[0.2em] mb-3">
+              <p className="text-[10px] font-mono text-violet-soft uppercase tracking-[0.2em] mb-3">
                 Disclaimer
               </p>
               <p className="text-xs font-mono text-text-muted leading-relaxed">

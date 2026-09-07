@@ -32,6 +32,7 @@ export default function ReadingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const initialized = useRef(false);
 
@@ -107,7 +108,7 @@ export default function ReadingsPage() {
 
         {error && (
           <Panel className="border-danger-muted/40 bg-danger-muted/5">
-            <p className="text-sm text-danger-muted font-mono">{error}</p>
+            <p className="text-sm text-danger-muted">{error}</p>
           </Panel>
         )}
 
@@ -146,28 +147,57 @@ export default function ReadingsPage() {
                               <SymbolChip className="text-[9px]">{reading.questionCategory}</SymbolChip>
                            )}
                         </div>
-                        <h3 className="text-lg font-display text-text group-hover:text-gold transition-colors truncate pr-4">
-                          {reading.question}
-                        </h3>
+                        {/* Die Frage selbst öffnet das Ritual — der einzige
+                            zuverlässige Pfad ins Detail */}
+                        <Link
+                          href={`/readings/${reading.id}`}
+                          className="inline-flex items-center min-h-[44px] w-fit"
+                        >
+                          <h3 className="text-lg font-display text-text group-hover:text-gold transition-colors truncate pr-4">
+                            {reading.question}
+                          </h3>
+                        </Link>
                       </div>
-                      
+
                       <div className="flex gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() => setExpanded(expanded === reading.id ? null : reading.id)}
-                          className="p-2 rounded-lg bg-surface-raised/40 border border-gold/5 hover:border-gold/20 text-text-muted hover:text-gold transition-all"
+                          aria-label={expanded === reading.id ? "Einklappen" : "Vorschau anzeigen"}
+                          className="min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center rounded-lg bg-surface-raised/40 border border-gold/5 hover:border-gold/20 text-text-muted hover:text-gold transition-all"
                           title="Anzeigen"
                         >
                           {expanded === reading.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(reading.id)}
-                          className="p-2 rounded-lg bg-surface-raised/40 border border-gold/5 hover:border-danger-muted/30 text-text-muted hover:text-danger-muted transition-all"
-                          title="Löschen"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {confirmDelete === reading.id ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-text-secondary">Wirklich löschen?</span>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(reading.id)}
+                              className="min-h-[44px] px-3 text-xs font-medium text-danger-muted hover:bg-danger-muted/10 rounded-lg transition-colors"
+                            >
+                              Ja, löschen
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDelete(null)}
+                              className="min-h-[44px] px-3 text-xs font-medium text-gold hover:bg-gold/10 rounded-lg transition-colors"
+                            >
+                              Behalten
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDelete(reading.id)}
+                            aria-label="Reading löschen"
+                            className="min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center rounded-lg bg-surface-raised/40 border border-gold/5 hover:border-danger-muted/30 text-text-muted hover:text-danger-muted transition-all"
+                            title="Löschen"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -175,7 +205,9 @@ export default function ReadingsPage() {
                       {reading.tarotDraws.map((draw, i) => (
                         <SymbolChip key={i} variant="gold">
                           {draw.card.name}
-                          {!draw.upright && " △"}
+                          {/* Umgekehrte Karten textlich, nicht nur als Glyph */}
+                          {!draw.upright && <span className="sr-only"> (umgekehrt)</span>}
+                          {!draw.upright && <span aria-hidden="true"> △</span>}
                         </SymbolChip>
                       ))}
                     </div>
@@ -193,8 +225,8 @@ export default function ReadingsPage() {
                           </div>
                           
                           <div className="mt-8 flex justify-end">
-                             <Link href={`/reading/${reading.id}`}>
-                                <Button variant="ghost" className="text-xs h-8">Vollständiges Ritual ansehen</Button>
+                             <Link href={`/readings/${reading.id}`}>
+                                <Button variant="ghost" className="text-xs h-11">Vollständiges Ritual ansehen</Button>
                              </Link>
                           </div>
                         </motion.div>

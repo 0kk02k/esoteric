@@ -21,6 +21,16 @@ const POSITION_LABELS: Record<string, string> = {
   impuls: "Impuls",
 };
 
+/** Beruhigende Rahmung für Karten mit hohem Emotionalpotenzial —
+    design.md-Stimme („Diese Karte kann auf … hinweisen"), keine Schicksalsaussage. */
+const REASSURANCE: Record<string, string> = {
+  "Der Tod": "Steht im Tarot für Wandlung und Abschied — als Symbol gelesen, nicht als Voraussage.",
+  "Der Turm": "Zeigt, was sich einem ehrlicheren Neubau nicht mehr anpasst.",
+  "Der Teufel": "Kann auf festgefahrene Muster hinweisen — und damit auf den Ausweg.",
+  "Zehn der Schwerter": "Zeigt einen Tiefpunkt, aus dem die Wende beginnen kann.",
+  "Der Gehängte": "Lädt ein, die Dinge einmal kopfüber — also andersherum — zu betrachten.",
+};
+
 export default function TarotCard({
   name,
   position,
@@ -204,13 +214,20 @@ export default function TarotCard({
             nur im Rasterbild leben (design.md: „Lesbarkeit vor Dekoration") */}
         <AnimatePresence>
           {revealed && (
-            <motion.span
+            <motion.div
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-sm font-display text-text text-center leading-snug max-w-[30ch]"
+              className="flex flex-col items-center gap-1"
             >
-              {coreName}
-            </motion.span>
+              <span className="text-sm font-display text-text text-center leading-snug max-w-[30ch]">
+                {coreName}
+              </span>
+              {REASSURANCE[coreName] && (
+                <span className="text-xs text-text-muted text-center leading-relaxed max-w-[34ch]">
+                  {REASSURANCE[coreName]}
+                </span>
+              )}
+            </motion.div>
           )}
         </AnimatePresence>
 
@@ -230,12 +247,12 @@ export default function TarotCard({
                 </span>
               )}
               {element && (
-                <span className="text-[10px] font-mono text-violet-soft bg-violet-deep/30 border border-violet/20 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-mono text-violet-soft bg-violet-deep/30 border border-violet/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
                   {element}
                 </span>
               )}
               {zodiacAssociation && (
-                <span className="text-[10px] font-mono text-gold bg-gold/10 border border-gold/20 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-mono text-gold bg-gold/10 border border-gold/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
                   {zodiacAssociation}
                 </span>
               )}

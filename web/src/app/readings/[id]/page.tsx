@@ -28,6 +28,13 @@ type Reading = {
   model: string | null;
 };
 
+/** Rohwerte aus der DB in deutscher UI-Sprache. */
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Ausstehend",
+  completed: "Abgeschlossen",
+  failed: "Fehlgeschlagen",
+};
+
 export default function ReadingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [reading, setReading] = useState<Reading | null>(null);
@@ -35,6 +42,27 @@ export default function ReadingDetailPage({ params }: { params: Promise<{ id: st
   const [error, setError] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [regenerating, setRegenerating] = useState(false);
+
+  // Retry für ein Reading ohne Deutung — der Generate-Endpoint braucht keinen Body
+  const regenerate = async () => {
+    setRegenerating(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/readings/${id}/generate`, { method: "POST" });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+        throw new Error(typeof data.error === "string" ? data.error : `Fehler: ${res.status}`);
+      }
+      const token = getSessionToken();
+      const r = await fetch(`/api/readings/${id}${token ? `?sessionToken=${encodeURIComponent(token)}` : ""}`);
+      if (r.ok) setReading(await r.json());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Die Deutung konnte nicht erzeugt werden.");
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   useEffect(() => {
     const token = getSessionToken();
@@ -125,17 +153,34 @@ export default function ReadingDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="flex items-center gap-2 px-4 py-2 bg-surface-raised/40 border border-gold/10 rounded-full">
                  <User className="w-3 h-3 text-gold/60" />
-                 <span className="text-[10px] font-mono text-gold/80 uppercase tracking-widest">Reading #{reading.id.slice(-4)}</span>
+                 <span className="text-[10px] font-mono text-gold/80 uppercase tracking-widest">
+                    {STATUS_LABELS[reading.status] ?? reading.status}
+                 </span>
               </div>
+
            </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
            <div className="lg:col-span-2 space-y-12">
               <section>
-                 <ReadingPanel model={reading.model || "KI"}>
-                    {reading.readingText}
-                 </ReadingPanel>
+                 {reading.readingText ? (
+                    <ReadingPanel model={reading.model || "KI"}>
+                       {reading.readingText}
+                    </ReadingPanel>
+                 ) : (
+                    /* Kein Deutungstext ist ein eigener Zustand — kein leeres KI-Panel */
+                    <Panel className="border-gold/20 bg-surface/40 py-12 text-center space-y-5">
+                       <p className="text-text-secondary leading-relaxed max-w-md mx-auto">
+                          Für dieses Reading wurde keine Deutung erzeugt — der Durchgang wurde vermutlich unterbrochen.
+                          Deine Karten sind da.
+                       </p>
+                       {error && <p className="text-sm text-danger-muted">{error}</p>}
+                       <Button onClick={regenerate} disabled={regenerating} className="h-11">
+                          {regenerating ? "Deutung entsteht ..." : "Deutung jetzt erzeugen"}
+                       </Button>
+                    </Panel>
+                 )}
               </section>
 
               <section className="space-y-6">
@@ -165,16 +210,20 @@ export default function ReadingDetailPage({ params }: { params: Promise<{ id: st
                  <div className="space-y-4">
                     <div className="flex justify-between items-center border-b border-gold/5 pb-2">
                        <span className="text-[10px] text-text-muted uppercase">Status</span>
-                       <span className="text-xs font-mono text-success-muted uppercase">{reading.status}</span>
+                       <span className="text-xs font-mono text-success-muted uppercase">{STATUS_LABELS[reading.status] ?? reading.status}</span>
                     </div>
                     <div className="flex justify-between items-center border-b border-gold/5 pb-2">
                        <span className="text-[10px] text-text-muted uppercase">Kategorie</span>
-                       <span className="text-xs font-mono text-gold uppercase">{reading.questionCategory || "General"}</span>
+                       <span className="text-xs font-mono text-gold uppercase">{reading.questionCategory || "Allgemein"}</span>
                     </div>
-                    <div className="flex justify-between items-center border-b border-gold/5 pb-2">
-                       <span className="text-[10px] text-text-muted uppercase">KI-Modell</span>
-                       <span className="text-xs font-mono text-violet-soft">{reading.model || "Nebius Kimi K3"}</span>
-                    </div>
+                    {/* Nur belegen, was wirklich lief — KI-Transparenz verbietet
+                        ein Modell, das nie gelaufen ist */}
+                    {reading.model && (
+                       <div className="flex justify-between items-center border-b border-gold/5 pb-2">
+                          <span className="text-[10px] text-text-muted uppercase">KI-Modell</span>
+                          <span className="text-xs font-mono text-violet-soft">{reading.model}</span>
+                       </div>
+                    )}
                  </div>
               </Panel>
 
@@ -183,7 +232,7 @@ export default function ReadingDetailPage({ params }: { params: Promise<{ id: st
                  <p className="text-xs text-text-muted mb-4 leading-relaxed">
                     Dieses Ritual ist privat. Wer den Link hat, kann es sehen — teile ihn nur mit Menschen, die es sehen dürfen.
                  </p>
-                 <Button onClick={copyLink} variant="secondary" className="w-full text-xs h-9">
+                 <Button onClick={copyLink} variant="secondary" className="w-full text-xs h-11">
                     {copyState === "copied" ? "Link kopiert" : copyState === "failed" ? "Kopieren nicht möglich" : "Link kopieren"}
                  </Button>
                  {copyState === "failed" && shareUrl && (

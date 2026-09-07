@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import StepIndicator from "@/components/StepIndicator";
 import TarotCard from "@/components/TarotCard";
@@ -47,6 +48,7 @@ type ReadingState = {
   shuffledDeck: string[];
   selectedCardIds: string[];
   cards: DrawnCard[];
+  cardNames: Record<string, string>;
   revealed: boolean[];
   result: ReadingResponse | null;
   geoWarning: string | null;
@@ -75,6 +77,7 @@ const INITIAL_STATE: ReadingState = {
   shuffledDeck: [],
   selectedCardIds: [],
   cards: [],
+  cardNames: {},
   revealed: [false, false, false],
   result: null,
   geoWarning: null,
@@ -142,6 +145,9 @@ function restorePersistedState(): ReadingState | null {
 export default function ReadingPage() {
   const [state, setState] = useState<ReadingState>(INITIAL_STATE);
   const [confirmAbort, setConfirmAbort] = useState(false);
+  // Feedback eingeklappt: die Resonanz darf der Schlussakt des Rituals nicht sein
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const router = useRouter();
   const abortRef = useRef<AbortController | null>(null);
   const tokenInitialized = useRef(false);
   const errorRef = useRef<HTMLDivElement>(null);
@@ -276,17 +282,26 @@ export default function ReadingPage() {
 
   const fetchShuffledDeck = useCallback(async () => {
     try {
-      const data = await api<{ cardIds: string[] }>("/api/tarot/shuffle", { signal: requestSignal(SHUFFLE_TIMEOUT_MS) });
-      setState((s) => ({ ...s, shuffledDeck: data.cardIds, step: "stellar" }));
+      const data = await api<{ cardIds: string[]; cards?: { id: string; name: string }[] }>("/api/tarot/shuffle", {
+        signal: requestSignal(SHUFFLE_TIMEOUT_MS),
+      });
+      setState((s) => ({
+        ...s,
+        shuffledDeck: data.cardIds,
+        cardNames: Object.fromEntries((data.cards ?? []).map((c) => [c.id, c.name])),
+        step: "stellar",
+      }));
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
         if (timedOut()) {
-          setState((s) => ({ ...s, error: TIMEOUT_MESSAGE, errorKind: null }));
+          // Zurück zum Geburtsdaten-Schritt — dort greift der existierende Retry-Pfad,
+          // statt einen Dead-End mit endlosem Spinner zu hinterlassen
+          setState((s) => ({ ...s, error: TIMEOUT_MESSAGE, errorKind: null, step: "birth" }));
         }
         return;
       }
       const { message, kind } = toUserError(err);
-      setState((s) => ({ ...s, error: message, errorKind: kind }));
+      setState((s) => ({ ...s, error: message, errorKind: kind, step: "birth" }));
     }
   }, []);
 
@@ -505,7 +520,7 @@ export default function ReadingPage() {
                <button
                  type="button"
                  onClick={() => setConfirmAbort(true)}
-                 className="group flex items-center gap-2 text-sm text-text-muted hover:text-gold transition-colors px-2 py-2 -mx-2 rounded-lg"
+                 className="group flex items-center gap-2 text-sm min-h-[44px] text-text-muted hover:text-gold transition-colors px-2 -mx-2 rounded-lg"
                >
                  <X className="w-4 h-4" />
                  <span>Abbrechen</span>
@@ -539,7 +554,7 @@ export default function ReadingPage() {
                          )} />
                          <div className="space-y-1">
                             <p className={cn(
-                              "text-sm font-mono leading-relaxed",
+                              "text-sm leading-relaxed",
                               state.errorKind ? "text-gold" : "text-danger-muted"
                             )}>{state.error}</p>
                             {state.errorKind === "limit" && (
@@ -673,7 +688,9 @@ export default function ReadingPage() {
                           </p>
                           <div className="flex items-center gap-2 text-[11px] text-text-muted max-w-xs">
                              <Info className="w-4 h-4 shrink-0" />
-                             Symbolische Reflexion als Brücke zur Selbsterkenntnis.
+                             <span>
+                               Kostenlos: drei Readings pro Tag. Symbolische Reflexion statt Beratung.
+                             </span>
                           </div>
                           {/* Mobil lebt der CTA in der fixen Leiste unterhalb */}
                           <Button
@@ -886,6 +903,7 @@ export default function ReadingPage() {
                        {state.shuffledDeck.length > 0 ? (
                         <StellarField
                           cardIds={state.shuffledDeck}
+                          cardNames={state.cardNames}
                           onComplete={handleStellarComplete}
                           error={state.error}
                         />
@@ -914,12 +932,12 @@ export default function ReadingPage() {
                          >
                            Deine Karten
                          </h2>
-                         <p className="text-xl text-text-secondary max-w-xl mx-auto leading-relaxed">
+                         <p className="text-xl text-text-secondary max-w-xl mx-auto leading-relaxed" aria-live="polite">
                            {state.cards.length === 0
                              ? "Deine Resonanzpunkte werden zu Karten..."
                              : allRevealed
                                ? "Deine Legung ist vollständig."
-                               : "Berühre die Karten, um sie zu enthüllen."}
+                               : `Noch ${3 - state.revealed.filter(Boolean).length} von ${state.cards.length || 3} Karten verborgen.`}
                          </p>
                       </div>
 
@@ -1087,6 +1105,7 @@ export default function ReadingPage() {
                                   </p>
                                   <a
                                     href={line.telHref}
+                                    aria-label={`${line.country}: ${line.serviceName}, Nummer ${line.number}`}
                                     className="inline-flex items-center gap-3 text-2xl font-display text-text hover:text-gold-soft transition-colors"
                                   >
                                     <Phone className="w-5 h-5 text-danger-muted" aria-hidden="true" />
@@ -1098,9 +1117,14 @@ export default function ReadingPage() {
                             </ul>
                             <p className="text-lg text-text-secondary leading-relaxed">{CRISIS_OUTRO}</p>
                             <div className="pt-4 border-t border-danger-muted/20">
+                              {/* Tatsächlich zur Startseite — resetRitual allein warf
+                                  zurück ins Frage-Formular von /reading */}
                               <button
                                 type="button"
-                                onClick={resetRitual}
+                                onClick={() => {
+                                  resetRitual();
+                                  router.push("/");
+                                }}
                                 className="text-sm text-text-muted hover:text-text transition-colors"
                               >
                                 Zurück zur Startseite
@@ -1171,37 +1195,7 @@ export default function ReadingPage() {
                           </section>
 
                           {state.result ? (
-                            <>
-                              <KineticBlueprint text={state.result.text} cards={state.cards} />
-
-                              {/* Siegel-Moment: das Reading ist da, wo man es wiederfindet —
-                                  die Konstellation der Wahl zeichnet sich als Signet */}
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-4 pt-8 border-t border-gold/10" role="status">
-                                <motion.div
-                                  initial={{ opacity: 0, scale: 0.85 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-                                  className="shrink-0"
-                                  aria-hidden="true"
-                                >
-                                  <Constellation cardIds={state.cards.map((c) => c.id)} className="h-9" />
-                                </motion.div>
-                                <div className="flex-1">
-                                  <p className="text-sm text-text">In deinem Grimoire vermerkt.</p>
-                                  <p className="text-xs text-text-muted mt-0.5">
-                                    {new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", year: "numeric" }).format(new Date())}
-                                    {" "}· automatisch in deinem Archiv gespeichert
-                                  </p>
-                                </div>
-                                <Link
-                                  href="/readings"
-                                  className="inline-flex items-center gap-2 text-sm text-gold hover:text-gold-soft transition-colors py-2"
-                                >
-                                  Im Archiv öffnen
-                                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
-                                </Link>
-                              </div>
-                            </>
+                            <KineticBlueprint text={state.result.text} cards={state.cards} />
                           ) : (
                             <Panel className="border-danger-muted/30 py-12 text-center">
                                <p className="text-danger-muted font-serif text-lg mb-6">
@@ -1298,14 +1292,58 @@ export default function ReadingPage() {
                             </div>
                           )}
 
-                          {/* Footer Section: Feedback & New Ritual */}
+                          {/* Footer: Feedback eingeklappt, Siegel als Schlussakt */}
                           <div className="pt-16 border-t border-gold/20 flex flex-col items-center gap-12">
                              <div className="w-full max-w-2xl">
-                                <h3 className="text-xs font-mono text-gold/80 uppercase tracking-[0.3em] mb-8 text-center">Resonanz</h3>
-                                <Panel className="bg-surface-raised/20">
-                                   <FeedbackForm readingId={state.readingId!} />
-                                </Panel>
+                                {feedbackOpen ? (
+                                  <>
+                                    <h3 className="text-xs font-mono text-gold/80 uppercase tracking-[0.3em] mb-8 text-center">Resonanz</h3>
+                                    <Panel className="bg-surface-raised/20">
+                                       <FeedbackForm readingId={state.readingId!} />
+                                    </Panel>
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setFeedbackOpen(true)}
+                                    className="w-full min-h-[44px] inline-flex items-center justify-center gap-2 text-sm text-text-muted hover:text-gold transition-colors"
+                                  >
+                                    <MessageSquare className="w-4 h-4" aria-hidden="true" />
+                                    Resonanz hinterlassen — hat diese Deutung gepasst?
+                                  </button>
+                                )}
                              </div>
+
+                             {/* Siegel-Moment: der letzte Akt — das Reading ist da,
+                                 wo man es wiederfindet, die Konstellation der Wahl
+                                 zeichnet sich als Signet */}
+                             {state.result && (
+                               <div className="w-full flex flex-col sm:flex-row sm:items-center gap-4 pt-8 border-t border-gold/10" role="status">
+                                 <motion.div
+                                   initial={{ opacity: 0, scale: 0.85 }}
+                                   animate={{ opacity: 1, scale: 1 }}
+                                   transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+                                   className="shrink-0"
+                                   aria-hidden="true"
+                                 >
+                                   <Constellation cardIds={state.cards.map((c) => c.id)} className="h-9" />
+                                 </motion.div>
+                                 <div className="flex-1">
+                                   <p className="text-sm text-text">In deinem Grimoire vermerkt.</p>
+                                   <p className="text-xs text-text-muted mt-0.5">
+                                     {new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", year: "numeric" }).format(new Date())}
+                                     {" "}· automatisch in deinem Archiv gespeichert
+                                   </p>
+                                 </div>
+                                 <Link
+                                   href="/readings"
+                                   className="inline-flex items-center gap-2 text-sm text-gold hover:text-gold-soft transition-colors py-2"
+                                 >
+                                   Im Archiv öffnen
+                                   <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                                 </Link>
+                               </div>
+                             )}
 
                              <div className="flex flex-col items-center gap-8 w-full max-w-sm">
                                 {/* Secondary: das Reading ist gesichert — der Reset ist kein Verlust mehr */}

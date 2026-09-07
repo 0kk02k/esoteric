@@ -30,7 +30,7 @@ export async function UserAuth() {
 
   return (
     <form action={signInAction}>
-      <Button type="submit" variant="ghost" className="h-9 px-4 text-xs font-mono uppercase tracking-widest text-gold hover:bg-gold/10">
+      <Button type="submit" variant="ghost" className="h-11 px-4 text-xs font-mono uppercase tracking-widest text-gold hover:bg-gold/10">
         Login
       </Button>
     </form>
