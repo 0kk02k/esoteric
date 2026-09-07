@@ -55,6 +55,8 @@ type ReadingState = {
   error: string | null;
   errorKind: ErrorKind;
   sessionToken: string;
+  plan: string;
+  deep: boolean;
   readingsRemaining: number | null;
   followupsRemaining: number | null;
   followupQuestion: string;
@@ -84,6 +86,8 @@ const INITIAL_STATE: ReadingState = {
   error: null,
   errorKind: null,
   sessionToken: "",
+  plan: "FREE",
+  deep: false,
   readingsRemaining: null,
   followupsRemaining: null,
   followupQuestion: "",
@@ -148,6 +152,8 @@ export default function ReadingPage() {
   const [confirmAbort, setConfirmAbort] = useState(false);
   // Feedback eingeklappt: die Resonanz darf der Schlussakt des Rituals nicht sein
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  // Info-Blase zum Plus-Upgrade (Tipp auf Mobile, wo es kein Hover gibt)
+  const [deepBubbleOpen, setDeepBubbleOpen] = useState(false);
   const router = useRouter();
   const abortRef = useRef<AbortController | null>(null);
   const tokenInitialized = useRef(false);
@@ -246,6 +252,7 @@ export default function ReadingPage() {
     try {
       const reading = await api<{
         id: string;
+        plan?: string;
         tarotDraws: { card: { id: string; name: string; element: string | null; zodiacAssociation: string | null }; position: string; upright: boolean }[];
       }>("/api/readings", {
         method: "POST",
@@ -267,7 +274,7 @@ export default function ReadingPage() {
         element: d.card.element,
         zodiacAssociation: d.card.zodiacAssociation,
       }));
-      setState((s) => ({ ...s, readingId: reading.id, cards, step: "drawing", error: null, errorKind: null }));
+      setState((s) => ({ ...s, readingId: reading.id, cards, plan: reading.plan ?? s.plan, step: "drawing", error: null, errorKind: null }));
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
         // Timeout: das Feld entsperren und eine Handlung anbieten statt Stillstand
@@ -383,6 +390,8 @@ export default function ReadingPage() {
     try {
       const result = await api<ReadingResponse>(`/api/readings/${state.readingId}/generate`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deep: state.deep }),
         signal: requestSignal(GENERATE_TIMEOUT_MS),
       });
       setState((s) => ({ ...s, result, step: "result" }));
@@ -403,7 +412,7 @@ export default function ReadingPage() {
       // Bleibe im drawing-Schritt: Karten und Auswahl bleiben, Retry ist ein Klick.
       setState((s) => ({ ...s, error: message, errorKind: kind, step: "drawing" }));
     }
-  }, [state.readingId]);
+  }, [state.readingId, state.deep]);
 
   const submitFollowup = useCallback(async () => {
     if (!state.readingId || !state.followupQuestion.trim()) return;
@@ -424,6 +433,7 @@ export default function ReadingPage() {
           question,
           sessionToken: state.sessionToken,
           history: state.followupMessages,
+          deep: state.deep,
         }),
       });
       setState((s) => ({
@@ -452,7 +462,7 @@ export default function ReadingPage() {
         followupQuestion: question,
       }));
     }
-  }, [state.readingId, state.followupQuestion, state.sessionToken, state.followupMessages]);
+  }, [state.readingId, state.followupQuestion, state.sessionToken, state.followupMessages, state.deep]);
 
   const resetRitual = useCallback(() => {
     abortRef.current?.abort();
@@ -1022,6 +1032,79 @@ export default function ReadingPage() {
                             animate={{ opacity: 1, y: 0 }}
                             className="flex flex-col items-center gap-5 mt-4"
                           >
+                            {/* Vertiefte Deutung: Plus schaltet die Denkphase zu —
+                                serverseitig am Plan gegated, der Button erklärt Free
+                                per Info-Blase (Tipp statt Hover auf Mobile) */}
+                            {state.plan === "PLUS" ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <button
+                                  type="button"
+                                  role="switch"
+                                  aria-checked={state.deep}
+                                  onClick={() => setState((s) => ({ ...s, deep: !s.deep }))}
+                                  className="flex items-center gap-3 min-h-[44px] px-4 text-sm text-text-secondary hover:text-text transition-colors"
+                                >
+                                  <span
+                                    aria-hidden="true"
+                                    className={cn(
+                                      "relative w-9 h-5 rounded-full transition-colors",
+                                      state.deep ? "bg-gold/70" : "bg-surface-raised border border-gold/20"
+                                    )}
+                                  >
+                                    <span
+                                      className={cn(
+                                        "absolute top-0.5 w-4 h-4 rounded-full transition-all",
+                                        state.deep ? "left-[18px] bg-gold" : "left-0.5 bg-text-muted"
+                                      )}
+                                    />
+                                  </span>
+                                  Vertiefte Deutung
+                                </button>
+                                <p className="text-[11px] text-text-muted">
+                                  Das Modell denkt vor der Antwort — tiefer verwoben, etwas länger.
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="relative group flex flex-col items-center gap-1">
+                                <button
+                                  type="button"
+                                  aria-disabled="true"
+                                  aria-expanded={deepBubbleOpen}
+                                  onClick={() => setDeepBubbleOpen((o) => !o)}
+                                  className="flex items-center gap-3 min-h-[44px] px-4 text-sm text-text-muted cursor-not-allowed"
+                                >
+                                  <span
+                                    aria-hidden="true"
+                                    className="relative w-9 h-5 rounded-full bg-surface-raised border border-gold/20 opacity-60"
+                                  >
+                                    <span className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-text-muted" />
+                                  </span>
+                                  Vertiefte Deutung
+                                  <Info className="w-3.5 h-3.5 text-gold/70" aria-hidden="true" />
+                                </button>
+                                <div
+                                  id="deep-plus-bubble"
+                                  role="note"
+                                  className={cn(
+                                    "absolute bottom-full mb-2 w-72 z-20 rounded-xl border border-gold/20 bg-surface p-4 text-left shadow-[0_12px_32px_rgba(0,0,0,0.5)]",
+                                    deepBubbleOpen ? "block" : "hidden group-hover:block"
+                                  )}
+                                >
+                                  <p className="text-xs text-text-secondary leading-relaxed">
+                                    Plus schaltet die vertiefte Deutung frei: Das Modell denkt vor
+                                    der Antwort und verwebt deine Symbole in mehreren Gedankengängen.
+                                  </p>
+                                  <Link
+                                    href="/pricing"
+                                    className="mt-2 inline-flex items-center gap-1.5 text-xs text-gold hover:text-gold-soft"
+                                  >
+                                    Plus entdecken
+                                    <ArrowRight className="w-3 h-3" aria-hidden="true" />
+                                  </Link>
+                                </div>
+                                <p className="text-[11px] text-text-muted">Plus-Feature</p>
+                              </div>
+                            )}
                             <Button onClick={generateAIReading} className="px-14 h-16 text-xl shadow-[0_0_30px_rgba(200,164,93,0.3)]">
                               Synthese starten
                             </Button>
@@ -1071,8 +1154,9 @@ export default function ReadingPage() {
                         <div className="w-full max-w-md space-y-4" role="status">
                           <div className="h-[2px] w-full bg-violet/10 rounded-full overflow-hidden relative progress-shimmer" />
                           <p className="text-sm text-text-secondary">
-                            Deine Deutung wird gewoben — das dauert meist 20 bis 60 Sekunden.
-                            Bitte lasse den Tab dabei offen.
+                            {state.deep
+                              ? "Vertiefte Deutung: das Modell denkt zuerst — das kann etwas länger dauern. Bitte lasse den Tab dabei offen."
+                              : "Deine Deutung wird gewoben — das dauert meist 20 bis 60 Sekunden. Bitte lasse den Tab dabei offen."}
                           </p>
                         </div>
                       </div>

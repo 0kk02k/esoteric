@@ -114,7 +114,8 @@ export async function POST(request: NextRequest) {
     // Increment usage count
     await incrementUsageCount(identifier);
 
-    return NextResponse.json(reading, { status: 201 });
+    // Plan mitliefern — der Flow blendet das Deep-Reasoning-Upgrade daran aus
+    return NextResponse.json({ ...reading, plan: limitCheck.plan }, { status: 201 });
   } catch (error) {
     console.error("Error creating reading:", error);
     return NextResponse.json(

@@ -24,10 +24,11 @@ export async function POST(
     const session = await auth();
     const userId = session?.user?.id;
     const body = await request.json();
-    const { question, sessionToken, history } = body as {
+    const { question, sessionToken, history, deep: deepRequested } = body as {
       question: string;
       sessionToken?: string;
       history?: { role: "user" | "assistant"; content: string }[];
+      deep?: boolean;
     };
 
     if (!question || question.trim().length < 3) {
@@ -96,8 +97,10 @@ export async function POST(
 
     let text: string;
     try {
-      // Reasoning-Modell: auch hier muss Reasoning + Antwort ins Budget passen
-      const completion = await chatCompletion(messages, { maxTokens: 4096 });
+      // Reasoning-Modell: auch hier muss Reasoning + Antwort ins Budget passen;
+      // die vertiefte Deutung bleibt ein Plus-Feature (serverseitig gegated)
+      const deep = deepRequested === true && limitCheck.plan === "PLUS";
+      const completion = await chatCompletion(messages, { maxTokens: 4096, deep });
       text = completion.text.trim();
     } catch (aiError) {
       const message = aiError instanceof Error ? aiError.message : String(aiError);

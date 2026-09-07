@@ -18,6 +18,8 @@ export type ReadingRequest = {
   cards: TarotCard[];
   chart?: ChartResult;
   sessionToken?: string;
+  /** Vertiefte Deutung: mit Denkphase (Plus-Feature, serverseitig gegated). */
+  deep?: boolean;
 };
 
 export type ReadingResponse = {
@@ -28,6 +30,8 @@ export type ReadingResponse = {
   promptVersion: string;
   safetyVersion: string;
   safetyAction?: SafetyAction;
+  /** Tatsächlich mit Denkphase gelaufen? */
+  deep?: boolean;
 };
 
 const PROMPT_VERSION = "1.3";
@@ -53,10 +57,30 @@ export type ChatCompletionResult = {
   latencyMs: number;
 };
 
+/**
+ * Request-Body für die Nebius Chat-Completion. `deep: false` schaltet die
+ * Denkphase über chat_template_kwargs ab (Nebius-hebel für Kimi K3 —
+ * `enable_thinking` wird ignoriert, `reasoning_effort` ist nur eine Obergrenze).
+ */
+export function buildChatRequestBody(
+  messages: ChatMessage[],
+  opts: { maxTokens: number; deep: boolean },
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    model: NEBIUS_MODEL,
+    messages,
+    max_tokens: opts.maxTokens,
+  };
+  if (!opts.deep) {
+    body.chat_template_kwargs = { thinking: false };
+  }
+  return body;
+}
+
 /** Ein einziger Chat-Completion-Pfad für Reading und Follow-up. */
 export async function chatCompletion(
   messages: ChatMessage[],
-  opts: { maxTokens: number },
+  opts: { maxTokens: number; deep?: boolean },
 ): Promise<ChatCompletionResult> {
   const apiKey = process.env.NEBIUS_API_KEY;
   if (!apiKey) {
@@ -70,11 +94,7 @@ export async function chatCompletion(
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: NEBIUS_MODEL,
-      messages,
-      max_tokens: opts.maxTokens,
-    }),
+    body: JSON.stringify(buildChatRequestBody(messages, { maxTokens: opts.maxTokens, deep: opts.deep ?? true })),
   });
   const latencyMs = Date.now() - start;
 
@@ -200,7 +220,7 @@ export async function generateReading(req: ReadingRequest): Promise<ReadingRespo
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: userMessage },
     ],
-    { maxTokens: 8192 },
+    { maxTokens: 8192, deep: req.deep ?? true },
   );
   const { text, model, tokensUsed, latencyMs } = completion;
 
@@ -218,5 +238,6 @@ export async function generateReading(req: ReadingRequest): Promise<ReadingRespo
     promptVersion: PROMPT_VERSION,
     safetyVersion: SAFETY_VERSION,
     safetyAction: classification.action === "redirect" ? "redirect" : "proceed",
+    deep: req.deep ?? true,
   };
 }

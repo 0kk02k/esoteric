@@ -17,6 +17,15 @@ export async function POST(
     const session = await auth();
     const userId = session?.user?.id;
 
+    // Wunsch des Clients — aber das Gate entscheidet der Server (Plan)
+    let deepRequested = false;
+    try {
+      const body = (await request.json()) as { deep?: unknown } | null;
+      deepRequested = body?.deep === true;
+    } catch {
+      // kein Body erlaubt — Standard gilt
+    }
+
     const reading = await prisma.reading.findUnique({
       where: { id },
       include: {
@@ -59,6 +68,9 @@ export async function POST(
       upright: draw.upright,
     }));
 
+    // Vertiefte Deutung ist ein Plus-Feature — der Plan wird serverseitig geprüft
+    const deep = deepRequested && limitCheck.plan === "PLUS";
+
     let chart: ChartResult | undefined;
     if (reading.birthProfile?.birthLat != null && reading.birthProfile?.birthLon != null) {
       const bp = reading.birthProfile;
@@ -92,6 +104,7 @@ export async function POST(
       cards,
       chart,
       sessionToken: reading.sessionToken ?? undefined,
+      deep,
     });
 
     await prisma.reading.update({
