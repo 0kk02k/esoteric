@@ -58,9 +58,11 @@ export function toUserError(err: unknown): { message: string; kind: ErrorKind } 
     if (m.includes("Unauthorized"))
       return { message: "Diese Sitzung gehört nicht zu dir. Starte ein neues Ritual.", kind: null };
     if (m.includes("API key") || m.includes("AI error") || m.includes("Nebius API error"))
-      return { message: "Die Synthese ist an der KI-Schnittstelle gescheitert. Bitte versuche es gleich erneut.", kind: null };
+      return { message: "Die Deutung konnte gerade nicht erzeugt werden. Deine Karten sind bewahrt — versuche es gleich erneut.", kind: null };
     if (err.status === 0) return { message: m, kind: null };
-    return { message: "Etwas ist schiefgelaufen. Bitte versuche es erneut.", kind: null };
+    if (err.status >= 500)
+      return { message: "Auf unserer Seite ist etwas schiefgegangen. Deine Auswahl ist sicher — versuche es gleich erneut.", kind: null };
+    return { message: "Das hat nicht geklappt. Versuche es gleich erneut.", kind: null };
   }
-  return { message: "Etwas ist schiefgelaufen. Bitte versuche es erneut.", kind: null };
+  return { message: "Das hat nicht geklappt. Versuche es gleich erneut.", kind: null };
 }

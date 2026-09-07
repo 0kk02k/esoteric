@@ -1,22 +1,30 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Panel } from "./Panel";
 import { Button } from "./Button";
-import { Shield, Cookie, Info } from "lucide-react";
+import { Shield } from "lucide-react";
 import Link from "next/link";
 
+/**
+ * Consent gehört auf die Landing — nie in den Reading-Flow. Dort würde ein
+ * Overlay die erste Eingabe blockieren und die Zustimmung vor das erste
+ * Wertmoment zwingen (design.md:521, „Erst Wert, dann Verpflichtung").
+ */
 export function ConsentNotice() {
+  const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    if (pathname !== "/") return;
     const consent = localStorage.getItem("eso_consent");
     if (!consent) {
       const timer = setTimeout(() => setIsVisible(true), 1500);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [pathname]);
 
   const handleAccept = () => {
     localStorage.setItem("eso_consent", "accepted");
@@ -39,14 +47,14 @@ export function ConsentNotice() {
                   <Shield className="w-5 h-5 text-gold -rotate-45" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="font-display text-xl text-text italic">Konsens & Privatsphäre</h3>
+                  <h3 className="font-display text-xl text-text">Konsens &amp; Privatsphäre</h3>
                   <p className="text-sm text-text-secondary leading-relaxed">
-                    ESO nutzt technisch notwendige Cookies und verarbeitet Geburtsdaten zur Erstellung Ihrer Readings. 
-                    Durch die Nutzung der Plattform erklären Sie sich mit unserer 
-                    <Link href="/privacy" className="text-gold hover:underline mx-1">Datenschutzerklärung</Link> 
-                    und unseren 
-                    <Link href="/terms" className="text-gold hover:underline mx-1">Nutzungsbedingungen</Link> 
-                    einverstanden.
+                    ESO nutzt technisch notwendige Cookies und verarbeitet Geburtsdaten zur Erstellung deiner Readings.
+                    Mit der Nutzung der Plattform stimmst du unserer{" "}
+                    <Link href="/privacy" className="text-gold hover:underline">Datenschutzerklärung</Link>{" "}
+                    und unseren{" "}
+                    <Link href="/terms" className="text-gold hover:underline">Nutzungsbedingungen</Link>{" "}
+                    zu.
                   </p>
                 </div>
               </div>
@@ -61,10 +69,6 @@ export function ConsentNotice() {
                   </Button>
                 </Link>
               </div>
-              
-              <p className="text-[10px] font-mono text-text-muted text-center uppercase tracking-widest opacity-60">
-                KI-Grimoire v1.0 — Symbolische Reflexion
-              </p>
             </div>
           </Panel>
         </motion.div>

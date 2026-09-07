@@ -14,7 +14,7 @@ type CrystalSpinnerProps = {
  */
 export function CrystalSpinner({ className, label }: CrystalSpinnerProps) {
   return (
-    <div className={cn("flex flex-col items-center gap-4", className)}>
+    <div role="status" aria-label={label ?? "Lädt"} className={cn("flex flex-col items-center gap-4", className)}>
       <div className="relative w-12 h-12">
         {/* Central pulse */}
         <div

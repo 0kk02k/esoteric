@@ -38,12 +38,19 @@ export default function RootLayout({
   return (
     <html lang="de" className={`${cormorant.variable} ${geist.variable} ${geistMono.variable}`}>
       <body className="antialiased min-h-screen flex flex-col selection:bg-gold/30 selection:text-gold">
+        {/* Skip-Link: der erste Tab-Halt — für Screenreader- und Tastaturnutzer */}
+        <a
+          href="#hauptinhalt"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:text-gold focus:border focus:border-gold/40"
+        >
+          Zum Inhalt springen
+        </a>
         <MotionConfig reducedMotion="user">
           <CelestialBackground />
           <div className="absolute top-0 right-0 p-4 sm:p-6 z-50">
             <UserAuth />
           </div>
-          <main className="flex-1 flex flex-col relative z-10">
+          <main id="hauptinhalt" className="flex-1 flex flex-col relative z-10">
             {children}
           </main>
           <ConsentNotice />

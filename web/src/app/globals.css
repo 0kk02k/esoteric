@@ -315,6 +315,9 @@ h1, h2, h3, h4, h5, h6, .font-display {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    /* iteration-count fehlt sonst laufen die infinite-Loops (Spinner, Shimmer,
+       Pulse) mit ~100 000 Iterationen pro Sekunde weiter */
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

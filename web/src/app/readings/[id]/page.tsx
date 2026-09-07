@@ -8,6 +8,7 @@ import { Button } from "@/components/Button";
 import ReadingPanel from "@/components/ReadingPanel";
 import TarotCard from "@/components/TarotCard";
 import { Constellation } from "@/components/Constellation";
+import { CrystalSpinner } from "@/components/CrystalSpinner";
 import { ArrowLeft, Calendar, User, MessageCircle } from "lucide-react";
 
 type TarotDraw = {
@@ -32,6 +33,8 @@ export default function ReadingDetailPage({ params }: { params: Promise<{ id: st
   const [reading, setReading] = useState<Reading | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
 
   useEffect(() => {
     const token = getSessionToken();
@@ -50,11 +53,31 @@ export default function ReadingDetailPage({ params }: { params: Promise<{ id: st
       });
   }, [id]);
 
+  const buildShareUrl = () => {
+    const token = getSessionToken();
+    // Der geteilte Link trägt denselben Session-Token wie der Abruf —
+    // „Nur wer den Link hat" ist sonst ein Versprechen ohne Funktion.
+    return `${window.location.origin}/readings/${id}${token ? `?sessionToken=${encodeURIComponent(token)}` : ""}`;
+  };
+
+  const copyLink = async () => {
+    const url = buildShareUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopyState("copied");
+    } catch {
+      // Clipboard kann verweigert werden — dann den Link wenigstens sichtbar machen
+      setShareUrl(url);
+      setCopyState("failed");
+      return;
+    }
+    window.setTimeout(() => setCopyState("idle"), 2500);
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8">
-        <div className="w-12 h-12 rounded-full border-2 border-gold/20 border-t-gold animate-spin mb-4" />
-        <p className="text-xs font-mono text-gold/40 uppercase tracking-[0.3em]">Rufe Ritual ab...</p>
+        <CrystalSpinner label="Rufe Ritual ab..." />
       </div>
     );
   }
@@ -149,16 +172,25 @@ export default function ReadingDetailPage({ params }: { params: Promise<{ id: st
                        <span className="text-xs font-mono text-gold uppercase">{reading.questionCategory || "General"}</span>
                     </div>
                     <div className="flex justify-between items-center border-b border-gold/5 pb-2">
-                       <span className="text-[10px] text-text-muted uppercase">Provider</span>
-                       <span className="text-xs font-mono text-violet/60">ANTHROPIC</span>
+                       <span className="text-[10px] text-text-muted uppercase">KI-Modell</span>
+                       <span className="text-xs font-mono text-violet-soft">{reading.model || "Nebius Kimi K3"}</span>
                     </div>
                  </div>
               </Panel>
 
               <Panel variant="raised" className="bg-gold/5 border-gold/20">
                  <h3 className="text-sm font-display text-gold mb-2">Teilen</h3>
-                 <p className="text-xs text-text-muted mb-4 leading-relaxed">Dieses Ritual ist privat. Nur Personen mit Zugriff auf deine Session können es sehen.</p>
-                 <Button variant="secondary" className="w-full text-xs h-9">Link kopieren</Button>
+                 <p className="text-xs text-text-muted mb-4 leading-relaxed">
+                    Dieses Ritual ist privat. Wer den Link hat, kann es sehen — teile ihn nur mit Menschen, die es sehen dürfen.
+                 </p>
+                 <Button onClick={copyLink} variant="secondary" className="w-full text-xs h-9">
+                    {copyState === "copied" ? "Link kopiert" : copyState === "failed" ? "Kopieren nicht möglich" : "Link kopieren"}
+                 </Button>
+                 {copyState === "failed" && shareUrl && (
+                    <p className="text-[10px] font-mono text-text-muted mt-3 break-all" role="status">
+                      {shareUrl}
+                    </p>
+                 )}
               </Panel>
            </aside>
         </div>

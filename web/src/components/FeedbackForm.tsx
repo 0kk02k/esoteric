@@ -73,7 +73,7 @@ export default function FeedbackForm({ readingId, onSubmit }: FeedbackFormProps)
         role="status"
         className="text-center py-6 bg-gold/5 rounded-xl border border-gold/10"
       >
-        <p className="text-sm text-gold font-display italic">Danke für deine Resonanz.</p>
+        <p className="text-sm text-gold font-display">Danke für deine Resonanz.</p>
       </motion.div>
     );
   }
@@ -120,7 +120,7 @@ export default function FeedbackForm({ readingId, onSubmit }: FeedbackFormProps)
               onClick={() => toggleTag(tag.value)}
               aria-pressed={selectedTags.includes(tag.value)}
               className={cn(
-                "min-h-[36px] px-4 py-2 rounded-full text-[11px] transition-all border",
+                "min-h-[44px] px-4 py-2 rounded-full text-[11px] inline-flex items-center transition-all border",
                 selectedTags.includes(tag.value)
                   ? "bg-violet-deep/40 text-violet-soft border-violet/40 shadow-[0_0_10px_rgba(124,92,255,0.1)]"
                   : "bg-surface-raised/40 text-text-secondary border-gold/10 hover:border-gold/25"

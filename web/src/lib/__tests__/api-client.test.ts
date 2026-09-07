@@ -63,10 +63,16 @@ describe('toUserError()', () => {
     expect(kind).toBe('limit');
   });
 
-  it('übersetzt fremde Serverfehler in einen ruhigen Generalsatz', () => {
+  it('ordnet 5xx unserer Seite zu und beruhigt ohne Falschversprechen', () => {
     const { kind, message } = toUserError(new ApiError('Reading error: 500', 500));
     expect(kind).toBeNull();
-    expect(message).toBe('Etwas ist schiefgelaufen. Bitte versuche es erneut.');
+    expect(message).toBe('Auf unserer Seite ist etwas schiefgegangen. Deine Auswahl ist sicher — versuche es gleich erneut.');
+  });
+
+  it('bleibt bei unbekannten 4xx ruhig und handlungsorientiert', () => {
+    const { kind, message } = toUserError(new ApiError('Unexpected', 418));
+    expect(kind).toBeNull();
+    expect(message).toBe('Das hat nicht geklappt. Versuche es gleich erneut.');
   });
 
   it('behandelt unbekannte Fehlerquellen wie Generalsätze', () => {

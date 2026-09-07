@@ -1,3 +1,39 @@
+---
+name: ESO — The Digital Grimoire
+description: Dunkles, editoriales Grimoire — exakte Astrologie, Tarot und KI-Synthese in ruhiger, glaubwürdiger Mystik.
+colors:
+  background: "#050508"
+  surface: "#0A0A0F"
+  surface-raised: "#12121A"
+  text-primary: "#F4EBDD"
+  text-secondary: "#B8AFA3"
+  text-muted: "#8F89A8"
+  gold: "#C8A45D"
+  gold-soft: "#E0C98A"
+  violet: "#7C5CFF"
+  violet-soft: "#9683FF"
+  violet-deep: "#1A142E"
+  border: "#1E1E2D"
+  danger-muted: "#A66A6A"
+  success-muted: "#8BAE8B"
+typography:
+  display:
+    fontFamily: "Cormorant Garamond, Georgia, serif"
+    fontWeight: 400
+  body:
+    fontFamily: "Geist, system-ui, sans-serif"
+    fontSize: "16px"
+  label:
+    fontFamily: "Geist Mono, monospace"
+    fontSize: "10px"
+rounded:
+  chip: "999px"
+  input: "12px"
+  card: "16px"
+  tarot: "12px"
+  modal: "20px"
+---
+
 # ESO - Designkonzept
 
 Dieses Dokument definiert die verbindliche Designrichtung fuer ESO. Grundlage ist die empfohlene Richtung aus der Designrecherche: `The Digital Grimoire`.

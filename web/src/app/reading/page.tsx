@@ -452,8 +452,18 @@ export default function ReadingPage() {
   const isCrisis =
     state.result?.safetyAction === "crisis_response" || state.result?.safetyAction === "block";
 
+  // Retry je Schritt: nur dort, wo der Fehler tatsächlich wiederholbar ist.
+  const canRetry = (state.step === "drawing" && !!state.readingId) || state.step === "birth";
+  const retryCurrentStep = () => {
+    if (state.step === "drawing") generateAIReading();
+    else if (state.step === "birth") submitBirth();
+  };
+
   const todayMax = new Date().toISOString().split("T")[0];
   const questionMinMet = state.question.trim().length >= 5;
+  const questionHint = !questionMinMet
+    ? "Noch kurze Sätze genügen — mindestens 5 Zeichen."
+    : `${500 - state.question.length} Zeichen verbleibend`;
 
   return (
     <div className="flex-1 px-4 py-8 sm:py-16 relative overflow-hidden">
@@ -464,7 +474,12 @@ export default function ReadingPage() {
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-gold/10 pb-8">
           <div className="flex flex-col gap-3">
              <span className="text-xs font-mono text-gold/80 uppercase tracking-[0.3em]">Kybernetisches Grimoire</span>
-             <StepIndicator current={state.step} skipped={state.includeBirth ? [] : ["birth"]} />
+             {/* „skipped“ erst, wenn die Entscheidung gefallen ist — vorher steht ihr
+                 Ergebnis im Fortschrittsbalken, bevor der Nutzer entschieden hat. */}
+             <StepIndicator
+               current={state.step}
+               skipped={!state.includeBirth && state.step !== "question" && state.step !== "birth" ? ["birth"] : []}
+             />
           </div>
 
           <div className="flex flex-col items-end gap-6">
@@ -535,19 +550,28 @@ export default function ReadingPage() {
                          </div>
                       </div>
 
-                      {state.errorKind && (
-                        <div className="flex flex-col sm:flex-row items-center gap-4">
-                          <Link href="/pricing">
-                            <Button variant="secondary" className="h-10 px-6 text-xs whitespace-nowrap group">
-                              Plus entdecken
-                              <ArrowRight className="w-3.5 h-3.5 ml-2 group-hover:translate-x-1 transition-transform" />
-                            </Button>
-                          </Link>
-                          <Button onClick={resetRitual} variant="ghost" className="h-10 px-6 text-xs whitespace-nowrap">
-                            Neues Ritual beginnen
+                      {/* Retry gehört zur Meldung, nicht zum errorKind — ein Fehler
+                          ohne Handlung ist die unerfüllbare Aufforderung „versuche es erneut". */}
+                      <div className="flex flex-col sm:flex-row items-center gap-4">
+                        {canRetry && (
+                          <Button onClick={retryCurrentStep} variant="secondary" className="h-10 px-6 text-xs whitespace-nowrap">
+                            Erneut versuchen
                           </Button>
-                        </div>
-                      )}
+                        )}
+                        {state.errorKind && (
+                          <>
+                            <Link href="/pricing">
+                              <Button variant="secondary" className="h-10 px-6 text-xs whitespace-nowrap group">
+                                Plus entdecken
+                                <ArrowRight className="w-3.5 h-3.5 ml-2 group-hover:translate-x-1 transition-transform" />
+                              </Button>
+                            </Link>
+                            <Button onClick={resetRitual} variant="ghost" className="h-10 px-6 text-xs whitespace-nowrap">
+                              Neues Ritual beginnen
+                            </Button>
+                          </>
+                        )}
+                      </div>
                    </div>
                  </Panel>
                </motion.div>
@@ -570,7 +594,7 @@ export default function ReadingPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -16 }}
                     >
-                      <Panel className="p-5 sm:p-8 lg:p-12">
+                      <Panel className="p-5 pb-44 sm:p-8 sm:pb-8 lg:p-12">
                          <div className="flex items-center gap-4 mb-8">
                             <div className="w-10 h-10 rounded-full border border-gold/20 flex items-center justify-center">
                                <Sparkles className="w-5 h-5 text-gold" />
@@ -608,7 +632,7 @@ export default function ReadingPage() {
                                   question: s.question.trim() ? `${s.question.trim()} ${topic}` : topic,
                                 }))
                               }
-                              className="crystal-chip text-xs px-4 py-2 rounded-xl text-text-secondary hover:text-text transition-colors"
+                              className="crystal-chip text-xs px-4 py-2 min-h-[44px] flex items-center rounded-xl text-text-secondary hover:text-text transition-colors"
                             >
                               {topic}
                             </button>
@@ -625,7 +649,7 @@ export default function ReadingPage() {
                                 aria-pressed={state.questionCategory === cat.value}
                                 onClick={() => setState((s) => ({ ...s, questionCategory: cat.value }))}
                                 className={cn(
-                                   "text-xs font-mono px-6 py-3 rounded-xl transition-all",
+                                   "text-xs font-mono px-6 py-3 min-h-[44px] flex items-center rounded-xl transition-all",
                                    state.questionCategory === cat.value
                                      ? "crystal-chip crystal-chip-active text-gold"
                                      : "crystal-chip text-text-secondary hover:text-text"
@@ -637,33 +661,41 @@ export default function ReadingPage() {
                           </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
+                        <div className="flex flex-col gap-1 pt-4">
+                          <p
+                            id="question-counter"
+                            className={cn(
+                              "text-[11px]",
+                              questionMinMet ? "text-text-muted" : "text-text-secondary"
+                            )}
+                          >
+                            {questionHint}
+                          </p>
+                          <div className="flex items-center gap-2 text-[11px] text-text-muted max-w-xs">
+                             <Info className="w-4 h-4 shrink-0" />
+                             Symbolische Reflexion als Brücke zur Selbsterkenntnis.
+                          </div>
+                          {/* Mobil lebt der CTA in der fixen Leiste unterhalb */}
                           <Button
                             onClick={submitQuestion}
                             disabled={!questionMinMet}
-                            className="w-full sm:w-auto min-w-[200px] h-14 text-lg"
+                            className="w-full sm:w-auto sm:min-w-[200px] h-14 text-lg mt-4 max-sm:hidden"
                           >
                             Weiter
                           </Button>
-                          <div className="flex flex-col gap-1">
-                            <p
-                              id="question-counter"
-                              className={cn(
-                                "text-[11px]",
-                                questionMinMet ? "text-text-muted" : "text-text-secondary"
-                              )}
-                            >
-                              {!questionMinMet
-                                ? "Noch kurze Sätze genügen — mindestens 5 Zeichen."
-                                : `${500 - state.question.length} Zeichen verbleibend`}
-                            </p>
-                            <div className="flex items-center gap-2 text-[11px] text-text-muted italic max-w-xs">
-                               <Info className="w-4 h-4 shrink-0" />
-                               Symbolische Reflexion als Brücke zur Selbsterkenntnis.
-                            </div>
-                          </div>
                         </div>
                       </Panel>
+
+                      {/* design.md:201 — prominenter Primär-CTA, mobil fix im Daumenbereich
+                          (gemessen lag „Weiter" 163 px unter dem Fold) */}
+                      <div className="sm:hidden fixed inset-x-0 bottom-0 z-30 border-t border-gold/10 bg-surface/95 backdrop-blur-md px-4 pt-3 [padding-bottom:calc(0.75rem+env(safe-area-inset-bottom))]">
+                        <p className={cn("text-[11px] mb-2", questionMinMet ? "text-text-muted" : "text-text-secondary")}>
+                          {questionHint}
+                        </p>
+                        <Button onClick={submitQuestion} disabled={!questionMinMet} className="w-full h-14 text-lg">
+                          Weiter
+                        </Button>
+                      </div>
                     </motion.div>
                   )}
 
@@ -675,7 +707,7 @@ export default function ReadingPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -16 }}
                     >
-                      <Panel className="p-5 sm:p-8 lg:p-12">
+                      <Panel className="p-5 pb-40 sm:p-8 sm:pb-8 lg:p-12">
                          <div className="flex items-center gap-4 mb-6">
                             <div className="w-10 h-10 rounded-full border border-gold/20 flex items-center justify-center">
                                <Sparkles className="w-5 h-5 text-gold" />
@@ -685,7 +717,7 @@ export default function ReadingPage() {
                               tabIndex={-1}
                               className="font-display text-3xl sm:text-4xl text-text heading-glow focus:outline-none"
                             >
-                              Himmelsmechanik
+                              Deine Geburtsdaten
                             </h2>
                         </div>
 
@@ -695,12 +727,13 @@ export default function ReadingPage() {
 
                         <div className="bg-gold/5 border border-gold/10 rounded-2xl p-6 mb-10">
                           <h3 className="text-xs font-mono text-gold uppercase tracking-widest mb-3">Warum Geburtsdaten?</h3>
-                          <p className="text-sm text-text-secondary leading-relaxed">
-                            Das Geburtsdatum ermöglicht es, die kosmische Signatur des Augenblicks deiner Geburt mit der Symbolik der Karten zu verweben.
-                            So entsteht ein tiefgehenderes, auf dich persönlich zugeschnittenes Spiegelbild deiner aktuellen Situation und deiner inneren Zeitqualität.
-                          </p>
-                          <p className="text-xs text-text-muted leading-relaxed mt-3">
+                          {/* Datenschutz zuerst — er war vorher unter acht Zeilen kosmischer Prosa versteckt */}
+                          <p className="text-xs text-text-muted leading-relaxed mb-3">
                             Deine Angaben werden nur für diese Berechnung genutzt — die Nutzung bleibt auch ohne Account anonym.
+                          </p>
+                          <p className="text-sm text-text-secondary leading-relaxed">
+                            Das Geburtsdatum verwebt die Signatur deines Geburtshimmels mit der Symbolik der Karten —
+                            so entsteht ein Spiegelbild, das auf dich persönlich zugeschnitten ist.
                           </p>
                         </div>
 
@@ -776,7 +809,7 @@ export default function ReadingPage() {
                           </motion.div>
                         )}
 
-                        <div className="flex flex-col sm:flex-row gap-6 pt-4">
+                        <div className="flex flex-col sm:flex-row gap-6 pt-4 max-sm:hidden">
                           <Button
                             onClick={submitBirth}
                             disabled={state.includeBirth && !state.birthDate}
@@ -793,11 +826,36 @@ export default function ReadingPage() {
                           </Button>
                         </div>
                         {state.includeBirth && !state.birthDate && (
-                          <p className="text-[11px] text-text-secondary mt-4" aria-live="polite">
+                          <p className="text-[11px] text-text-secondary mt-4 max-sm:hidden" aria-live="polite">
                             Für die Berechnung braucht es ein Geburtsdatum — oder du fährst ohne Horoskop fort.
                           </p>
                         )}
                       </Panel>
+
+                      {/* Mobil fix im Daumenbereich — gleiche Begründung wie beim Frage-Schritt */}
+                      <div className="sm:hidden fixed inset-x-0 bottom-0 z-30 border-t border-gold/10 bg-surface/95 backdrop-blur-md px-4 pt-3 [padding-bottom:calc(0.75rem+env(safe-area-inset-bottom))]">
+                        {state.includeBirth && !state.birthDate && (
+                          <p className="text-[11px] text-text-secondary mb-2" aria-live="polite">
+                            Für die Berechnung braucht es ein Geburtsdatum — oder du fährst ohne Horoskop fort.
+                          </p>
+                        )}
+                        <div className="flex gap-4">
+                          <Button
+                            onClick={submitBirth}
+                            disabled={state.includeBirth && !state.birthDate}
+                            className="flex-1 h-14 text-lg"
+                          >
+                            {state.includeBirth ? "Berechnen & Weiter" : "Ohne Horoskop fortfahren"}
+                          </Button>
+                          <Button
+                            onClick={() => setState((s) => ({ ...s, step: "question" }))}
+                            variant="ghost"
+                            className="h-14 px-6"
+                          >
+                            <ArrowLeft className="w-4 h-4 mr-2" /> Zurück
+                          </Button>
+                        </div>
+                      </div>
                     </motion.div>
                   )}
 
@@ -818,9 +876,10 @@ export default function ReadingPage() {
                         >
                           Das Energiefeld
                         </h2>
+                        {/* Die Anweisung lebt in StellarFields Live-Region — hier steht das Warum, nicht das Wie */}
                         <p className="text-lg text-text-secondary max-w-xl mx-auto leading-relaxed">
-                          Drei Zonen — Gegenwart, Spannung, Impuls. Tippe in eine Zone und ein Licht
-                          entzündet deine Karte. Du kannst jede Zone wieder abwählen, bis du bestätigst.
+                          Jedes Licht ist eine der 78 Karten. Gegenwart, Spannung und Impuls bilden
+                          die Achse deiner Legung — aus jeder Zone wählst du ein Licht.
                         </p>
                       </div>
 
@@ -853,13 +912,13 @@ export default function ReadingPage() {
                            tabIndex={-1}
                            className="font-display text-4xl sm:text-5xl text-text heading-glow focus:outline-none"
                          >
-                           Materialisierung
+                           Deine Karten
                          </h2>
                          <p className="text-xl text-text-secondary max-w-xl mx-auto leading-relaxed">
                            {state.cards.length === 0
                              ? "Deine Resonanzpunkte werden zu Karten..."
                              : allRevealed
-                               ? "Die Konstellation ist vollständig."
+                               ? "Deine Legung ist vollständig."
                                : "Berühre die Karten, um sie zu enthüllen."}
                          </p>
                       </div>
@@ -873,7 +932,7 @@ export default function ReadingPage() {
                           <Panel className="bg-surface-raised/30 border-gold/10 py-6 px-8 relative overflow-hidden group">
                             <div className="flex flex-col items-center gap-4 relative z-10">
                                <div className="flex flex-col items-center gap-2 mb-2">
-                                  <span className="text-[11px] font-mono text-gold/80 uppercase tracking-[0.3em]">Radix-Signatur</span>
+                                  <span className="text-[11px] font-mono text-gold/80 uppercase tracking-[0.3em]">Dein Radix</span>
                                   <div className="w-12 h-[1px] bg-gold/20" />
                                </div>
 
@@ -1015,7 +1074,7 @@ export default function ReadingPage() {
                           <div className="space-y-8">
                             <div className="flex items-center gap-3">
                               <div className="w-1.5 h-1.5 rounded-full bg-danger-muted shrink-0" />
-                              <h2 className="font-display text-3xl text-text">Hilfe ist näher, als du denkst</h2>
+                              <h2 ref={stepHeadingRef} tabIndex={-1} className="font-display text-3xl text-text focus:outline-none">Hilfe ist näher, als du denkst</h2>
                             </div>
                             <p className="text-lg text-text-secondary leading-relaxed">
                               {CRISIS_INTRO}
@@ -1145,8 +1204,8 @@ export default function ReadingPage() {
                             </>
                           ) : (
                             <Panel className="border-danger-muted/30 py-12 text-center">
-                               <p className="text-danger-muted font-serif italic text-lg mb-6">
-                                 Die symbolische Verbindung konnte nicht stabilisiert werden.
+                               <p className="text-danger-muted font-serif text-lg mb-6">
+                                 Die Deutung konnte gerade nicht erzeugt werden — deine Karten sind bewahrt.
                                </p>
                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                                  <Button onClick={generateAIReading} variant="secondary">Erneut versuchen</Button>

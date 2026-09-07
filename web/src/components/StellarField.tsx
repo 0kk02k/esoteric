@@ -165,9 +165,9 @@ export default function StellarField({ cardIds, onComplete, error }: StellarFiel
   }, [isComplete, locked, ignited, onComplete]);
 
   const statusText = locked
-    ? "Konstellation wird materialisiert"
+    ? "Deine Wahl wird übernommen"
     : isComplete
-      ? "Drei Zonen entzündet — bestätige deine Konstellation"
+      ? "Drei Zonen entzündet — bestätige deine Legung"
       : `${selectedZones.length} von ${REQUIRED_ZONES} Zonen entzündet`;
 
   return (
@@ -190,7 +190,7 @@ export default function StellarField({ cardIds, onComplete, error }: StellarFiel
         aria-label={`Resonanzfeld: wähle für ${ZONES.map((z) => z.label).join(", ")} je eine Karte`}
         className={cn(
           "relative w-full max-w-3xl rounded-3xl overflow-hidden border border-violet/10",
-          "bg-[radial-gradient(ellipse_at_center,rgba(26,20,46,0.3),rgba(9,8,13,0.95))]",
+          "bg-[radial-gradient(ellipse_at_center,rgba(26,20,46,0.3),rgba(5,5,8,0.95))]",
           wide ? "aspect-[16/9] grid grid-cols-3 divide-x divide-violet/10" : "aspect-[4/5] flex flex-col divide-y divide-violet/10",
           locked && "pointer-events-none"
         )}
@@ -268,7 +268,7 @@ export default function StellarField({ cardIds, onComplete, error }: StellarFiel
                   return (
                     <span
                       key={particle.id}
-                      className="absolute rounded-full bg-white/40"
+                      className="absolute rounded-full bg-white/60"
                       style={{
                         left: `${pos.left}%`,
                         top: `${pos.top}%`,
@@ -276,7 +276,7 @@ export default function StellarField({ cardIds, onComplete, error }: StellarFiel
                         height: particle.size,
                         marginLeft: -particle.size / 2,
                         marginTop: -particle.size / 2,
-                        opacity: particle.brightness * 0.5,
+                        opacity: 0.3 + particle.brightness * 0.6,
                       }}
                     />
                   );
@@ -317,7 +317,9 @@ export default function StellarField({ cardIds, onComplete, error }: StellarFiel
                 >
                   {zone.label} {isSelected && "· entzündet"}
                 </span>
-                <span className="text-[11px] text-text-muted max-w-[16ch] leading-snug hidden sm:block">
+                {/* Die Bedeutung der Zone steht auch mobil — das Ritual darf
+                    nicht nur auf Desktop erklärbar sein */}
+                <span className="text-[11px] text-text-muted max-w-[18ch] leading-snug">
                   {zone.hint}
                 </span>
               </span>
@@ -338,7 +340,7 @@ export default function StellarField({ cardIds, onComplete, error }: StellarFiel
             <p className="text-lg font-display text-gold">Drei Lichter entzündet</p>
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <Button onClick={confirmSelection} className="px-12 h-14">
-                Materialisierung starten
+                Legung bestätigen
               </Button>
               <Button onClick={resetSelection} variant="ghost" className="px-8 h-14">
                 Neu wählen
@@ -353,7 +355,7 @@ export default function StellarField({ cardIds, onComplete, error }: StellarFiel
             transition={{ delay: 0.3 }}
             className="text-xs font-mono text-text-muted uppercase tracking-widest"
           >
-            Konstellation wird materialisiert...
+            Karten werden gezogen...
           </motion.p>
         )}
       </AnimatePresence>

@@ -63,7 +63,9 @@ export default function StepIndicator({
                     } : {}}
                     transition={active && !reduceMotion ? { duration: 2.5, repeat: Infinity, ease: "easeInOut" } : {}}
                     className={cn(
-                      "w-3 h-3 rotate-45 transition-all duration-500 border",
+                      // Kein zusätzliches rotate-45: der clipPath allein ergibt den
+                      // Diamanten — beide zusammen heben sich zu einem Quadrat auf.
+                      "w-3 h-3 transition-all duration-500 border",
                       active
                         ? "bg-gold/30 border-gold/80 scale-[1.6]"
                         : completed
@@ -78,7 +80,7 @@ export default function StepIndicator({
                   {/* Glass fill for completed steps */}
                   {completed && (
                     <div
-                      className="absolute inset-0 w-3 h-3 rotate-45"
+                      className="absolute inset-0 w-3 h-3"
                       style={{
                         clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
                         background: "linear-gradient(135deg, rgba(200,164,93,0.3), rgba(200,164,93,0.1))",
@@ -88,7 +90,7 @@ export default function StepIndicator({
                 </div>
                 <span
                   className={cn(
-                    "text-[9px] sm:text-[10px] font-mono transition-all duration-500 tracking-wider uppercase whitespace-nowrap",
+                    "text-[10px] font-mono transition-all duration-500 tracking-wider uppercase whitespace-nowrap",
                     active ? "text-gold text-shadow-gold" :
                     completed ? "text-gold/70" :
                     skippedStep ? "text-text-muted line-through decoration-text-muted/60" : "text-text-muted"

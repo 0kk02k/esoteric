@@ -186,18 +186,33 @@ export default function TarotCard({
               {!imageError ? (
                 <img
                   src={imagePath}
-                  alt={name}
+                  alt=""
                   className="w-full h-full object-cover object-bottom"
                   onError={() => setImageError(true)}
                 />
               ) : (
-                <div className="w-full h-full bg-surface flex items-center justify-center">
+                <div className="w-full h-full bg-surface flex flex-col items-center justify-center gap-3">
                   <Sparkles className="w-10 h-10 text-gold/30" />
+                  <span className="text-xs font-mono text-gold/70 tracking-widest uppercase">{coreName}</span>
                 </div>
               )}
             </div>
           </motion.button>
         </div>
+
+        {/* Der Kartenname als echter Text — die Identität der Karte darf nicht
+            nur im Rasterbild leben (design.md: „Lesbarkeit vor Dekoration") */}
+        <AnimatePresence>
+          {revealed && (
+            <motion.span
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-sm font-display text-text text-center leading-snug max-w-[30ch]"
+            >
+              {coreName}
+            </motion.span>
+          )}
+        </AnimatePresence>
 
         {/* Element chips below card — visible after reveal.
             Umgekehrte Karten werden TEXTLICH gekennzeichnet (die Chips selbst
@@ -210,17 +225,17 @@ export default function TarotCard({
               className="flex flex-wrap gap-1.5 justify-center"
             >
               {!upright && (
-                <span className="text-[9px] font-mono text-violet-soft bg-violet-deep/30 border border-violet/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                <span className="text-[10px] font-mono text-violet-soft bg-violet-deep/30 border border-violet/20 px-2 py-0.5 rounded-full tracking-wider">
                   Umgekehrt
                 </span>
               )}
               {element && (
-                <span className="text-[9px] font-mono text-violet-soft bg-violet-deep/30 border border-violet/20 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-mono text-violet-soft bg-violet-deep/30 border border-violet/20 px-2 py-0.5 rounded-full">
                   {element}
                 </span>
               )}
               {zodiacAssociation && (
-                <span className="text-[9px] font-mono text-gold bg-gold/10 border border-gold/20 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-mono text-gold bg-gold/10 border border-gold/20 px-2 py-0.5 rounded-full">
                   {zodiacAssociation}
                 </span>
               )}
