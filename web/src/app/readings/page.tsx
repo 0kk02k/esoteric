@@ -169,37 +169,51 @@ export default function ReadingsPage() {
                         >
                           {expanded === reading.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
-                        {confirmDelete === reading.id ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-text-secondary">Wirklich löschen?</span>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(reading.id)}
-                              className="min-h-[44px] px-3 text-xs font-medium text-danger-muted hover:bg-danger-muted/10 rounded-lg transition-colors"
-                            >
-                              Ja, löschen
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDelete(null)}
-                              className="min-h-[44px] px-3 text-xs font-medium text-gold hover:bg-gold/10 rounded-lg transition-colors"
-                            >
-                              Behalten
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setConfirmDelete(reading.id)}
-                            aria-label="Reading löschen"
-                            className="min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center rounded-lg bg-surface-raised/40 border border-gold/5 hover:border-danger-muted/30 text-text-muted hover:text-danger-muted transition-all"
-                            title="Löschen"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDelete(reading.id)}
+                          aria-label="Reading löschen"
+                          className="min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center rounded-lg bg-surface-raised/40 border border-gold/5 hover:border-danger-muted/30 text-text-muted hover:text-danger-muted transition-all"
+                          title="Löschen"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
+
+                    {/* Die Bestätigung bekommt eine eigene vollbrechte Zeile — im
+                        Header hatte sie auf Mobile keinen Platz und wurde von
+                        Panels overflow-hidden abgeschnitten (unantklickbar) */}
+                    <AnimatePresence>
+                      {confirmDelete === reading.id && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger-muted/30 bg-danger-muted/5 px-4 py-2">
+                            <span className="text-sm text-text-secondary">Dieses Reading wirklich löschen?</span>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDelete(null)}
+                                className="min-h-[44px] px-4 text-xs font-medium text-gold hover:bg-gold/10 rounded-lg transition-colors"
+                              >
+                                Behalten
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(reading.id)}
+                                className="min-h-[44px] px-4 text-xs font-medium text-background bg-danger-muted hover:bg-danger-muted/80 rounded-lg transition-colors"
+                              >
+                                Ja, löschen
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     <div className="flex flex-wrap gap-2">
                       {reading.tarotDraws.map((draw, i) => (

@@ -14,6 +14,8 @@
   --color-violet-deep: #1a142e;
   --color-border: #1e1e2d;
   --color-blueprint: #0f172a;
+  --color-danger-muted: #a66a6a;
+  --color-success-muted: #8bae8b;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -45,6 +47,8 @@
   --color-blueprint: var(--color-blueprint);
   --color-text-secondary: var(--color-text-secondary);
   --color-text-muted: var(--color-text-muted);
+  --color-danger-muted: var(--color-danger-muted);
+  --color-success-muted: var(--color-success-muted);
   --font-sans: var(--font-geist);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-cormorant);
