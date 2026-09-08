@@ -383,6 +383,39 @@ export default function ReadingPage() {
 
   const allRevealed = state.revealed.every(Boolean);
 
+  // Auto-Enthüllung: die Karten drehen sich nach Ankunft nacheinander von
+  // selbst — das dokumentierte Ritual-Reveal (einzige Ausnahme von „keine
+  // setTimeout-Kaskaden", design.md). Ein Tipp auf eine verdeckte Karte
+  // bleibt der manuelle Skip. Bei reduced-motion drehen sie sich sofort.
+  const revealTimers = useRef<number[]>([]);
+  useEffect(() => {
+    if (state.step !== "drawing" || state.cards.length === 0) return;
+    const hidden = state.cards.map((_, i) => i).filter((i) => !state.revealed[i]);
+    if (hidden.length === 0) return;
+    const reveal = (index: number) =>
+      setState((s) => {
+        if (s.revealed[index]) return s;
+        const revealed = [...s.revealed];
+        revealed[index] = true;
+        return { ...s, revealed };
+      });
+    if (reduceMotion) {
+      const t = window.setTimeout(() => hidden.forEach(reveal), 0);
+      revealTimers.current.push(t);
+      return () => window.clearTimeout(t);
+    }
+    hidden.forEach((cardIndex, order) => {
+      revealTimers.current.push(window.setTimeout(() => reveal(cardIndex), 900 + order * 750));
+    });
+    return () => {
+      revealTimers.current.forEach((t) => window.clearTimeout(t));
+      revealTimers.current = [];
+    };
+    // `revealed` bewusst nicht in den deps: ein manueller Skip darf die
+    // Sequenz nicht neu starten; verdeckt gebliebene Karten laufen weiter.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.step, state.cards.length, reduceMotion]);
+
   const generateAIReading = useCallback(async () => {
     if (!state.readingId) return;
     setState((s) => ({ ...s, step: "generating", error: null, errorKind: null }));
@@ -479,10 +512,17 @@ export default function ReadingPage() {
     state.result?.safetyAction === "crisis_response" || state.result?.safetyAction === "block";
 
   // Retry je Schritt: nur dort, wo der Fehler tatsächlich wiederholbar ist.
-  const canRetry = (state.step === "drawing" && !!state.readingId) || state.step === "birth";
+  const canRetry =
+    (state.step === "drawing" && !!state.readingId) ||
+    state.step === "birth" ||
+    state.step === "stellar";
   const retryCurrentStep = () => {
     if (state.step === "drawing") generateAIReading();
     else if (state.step === "birth") submitBirth();
+    else if (state.step === "stellar") {
+      // Die getroffene Wahl bleibt — nur der fehlgeschlagene Lauf wird wiederholt
+      createReading(state.question, state.questionCategory, state.birthProfileId, state.selectedCardIds);
+    }
   };
 
   const todayMax = new Date().toISOString().split("T")[0];
@@ -906,8 +946,9 @@ export default function ReadingPage() {
                         </h2>
                         {/* Die Anweisung lebt in StellarFields Live-Region — hier steht das Warum, nicht das Wie */}
                         <p className="text-lg text-text-secondary max-w-xl mx-auto leading-relaxed">
-                          Jedes Licht ist eine der 78 Karten. Gegenwart, Spannung und Impuls bilden
-                          die Achse deiner Legung — aus jeder Zone wählst du ein Licht.
+                          Jedes Licht ist eine der 78 Karten. Berühre drei Sterne — der erste
+                          steht für deine Gegenwart, der zweite für deine Spannung, der dritte
+                          für deinen Impuls.
                         </p>
                       </div>
 
@@ -915,6 +956,7 @@ export default function ReadingPage() {
                         <StellarField
                           cardIds={state.shuffledDeck}
                           cardNames={state.cardNames}
+                          initialSelectedCardIds={state.selectedCardIds}
                           onComplete={handleStellarComplete}
                           error={state.error}
                         />
@@ -948,7 +990,7 @@ export default function ReadingPage() {
                              ? "Deine Resonanzpunkte werden zu Karten..."
                              : allRevealed
                                ? "Deine Legung ist vollständig."
-                               : `Noch ${3 - state.revealed.filter(Boolean).length} von ${state.cards.length || 3} Karten verborgen.`}
+                               : "Deine Karten enthüllen sich — schau ihnen zu oder berühre sie für den schnellen Blick."}
                          </p>
                       </div>
 

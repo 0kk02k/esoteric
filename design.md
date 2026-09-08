@@ -415,7 +415,7 @@ Regeln:
 
 ### 3. Tarot-Ziehung
 
-> **Entscheidung (2026-09-09, Shape-Brief):** Die Ziehung läuft als **Drei-Zonen-Resonanzfeld**: das Feld teilt sich in drei Zonen — Gegenwart, Spannung, Impuls — und jede Zone ist das Ziel. Ein Tipp in die Zone entzuendet eines ihrer 78 Lichter (deterministisch aus den Karten-IDs) und legt damit die Karte dieser Position fest. Die Wahl IST die Position — sie erklaert die Positionen von selbst. Mobile: drei horizontale Baender; Desktop: drei Spalten. Die 78 Lichter bleiben als Sternenhimmel-Textur sichtbar, sind aber keine Ziele mehr. Reversibilitaet (erneuter Tippt waehlt ab, `Neu waehlen` setzt zurueck), explizite Bestaetigung (`Materialisierung starten`), 3 Tabstopps, Live-Region — fruehere "drei verdeckte Karten"-Layouts dieser Sektion sind historisch.
+> **Entscheidung (2026-09-08, Redesign):** Die Ziehung ist ein **einheitliches Sternenfeld**: alle 78 Lichter sind Sterne und damit Ziele — Zonen-Baender entfallen. Ein Tipp waehlt den naechstgelegenen Stern (Nearest-Pick in Pixeln, Mindestabstand zwischen den Lichtern); die Reihenfolge der Tipps IST die Position — 1. Gegenwart, 2. Spannung, 3. Impuls. Nach jedem Tipp zeichnet sich die Linie zum vorherigen Stern; beim dritten schliesst sich die Figur zum ersten Licht, und alle Linien leuchten einmal auf. Danach bestaetigt sich die Wahl selbst — der dritte Tipp ist das Versprechen (Auto-Bestätigung, kein Confirm-Button). Ein Fehler der Erstellung entriegelt das Feld: umwählen, die naechste vollstaendige Figur zaehlt wieder. Abwahl durch erneuten Tipp auf den gewaehlten Stern; `Stern ziehen` (Blindwahl) und `Zuruecknehmen` erschliessen das Feld fuer Tastatur und Screenreader — 1–3 Tabstopps statt 78. Live-Region nennt Position und Kartenname. Das Signet im Flow und Archiv rekonstruiert genau diese geschlossene Figur aus den Karten-IDs. Fruehere "drei verdeckte Karten"- und Drei-Zonen-Layouts dieser Sektion sind historisch.
 
 Ziel:
 
@@ -425,9 +425,10 @@ Ziel:
 
 Layout:
 
-- Resonanzfeld mit drei zu waehlenden Lichtpunkten
-- Positionsanzeigen `Gegenwart / Spannung / Impuls` fuellen sich bei der Wahl
-- nach Bestaetigung: Karten-Enthuellung mit Flip, Karte, Position, Symbol-Chips
+- Sternenfeld als eine Flaeche (Mobile 4:5, Desktop 16:9), alle 78 Lichter antippbar
+- Positionsanzeigen `Gegenwart / Spannung / Impuls` als Chips unter dem Feld, fuellen sich mit Nummer und Kartenname
+- nach der Auto-Bestätigung: Karten-Enthuellung gestaffelt als Ritual-Reveal (Flip, Karte, Position, Symbol-Chips); Tipp auf eine Karte ist der manuelle Skip; `prefers-reduced-motion` enthuellt sofort
+- Ausnahme von der setTimeout-Kaskaden-Regel (`:511`) genau fuer dieses Ritual-Reveal
 
 Positionen MVP:
 
