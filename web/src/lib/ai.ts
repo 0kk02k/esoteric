@@ -34,7 +34,7 @@ export type ReadingResponse = {
   deep?: boolean;
 };
 
-const PROMPT_VERSION = "1.3";
+const PROMPT_VERSION = "1.4"; // 1.4: Synthese-Sektion geschärft (2–4 Sätze, stärkster Satz zuerst, Alltagsübersetzung, stabiles >>-Format fürs Chart-Matching)
 const SAFETY_VERSION = "1.0";
 
 // ---------------------------------------------------------------------------
@@ -139,7 +139,12 @@ Strukturiere deine Antwort zwingend in exakt diese Abschnitte:
 ### [Kartenname] ([Ausrichtung])
 [Kurze sachliche Erklärung des Archetyps in dieser Lage und seine spezifische Bedeutung für die Frage.]
 
-**Synthese aus Astrologie und Tarot** -- Deute die Karten im Kontext zueinander und in direkter Verbindung zur Fragestellung. Beziehe hierbei zwingend die übermittelte astrologische Komponente ein. Strukturiere diesen Absatz mit Unterüberschriften: Beginne jeden Themengebiet mit einer eigenen Zeile im Format >> Themengebiet (z.B. >> Sonne in Löwe, >> Venus-Saturn-Konjunktion), gefolgt von einer Leerzeile und dem dazugehörigen Absatz.
+**Synthese aus Astrologie und Tarot** -- Deute die Karten im Kontext zueinander und in direkter Verbindung zur Fragestellung. Beziehe hierbei zwingend die übermittelte astrologische Komponente ein. Strukturiere diesen Abschnitt mit Unterüberschriften: Beginne jedes Symbol mit einer eigenen Zeile im Format >> Symbol (z.B. >> Sonne in Löwe, >> Venus-Saturn-Konjunktion), gefolgt von einer Leerzeile und genau einem Absatz mit 2 bis 4 Sätzen. Regeln pro Symbol:
+- Genau EINE klare Erkenntnis pro Symbol -- keine Aufzählung aller Bedeutungen.
+- Der erste Satz ist der stärkste und muss in sich verständlich sein; er wird als Vorschau angezeigt.
+- Jede Passage bezieht sich ausdrücklich auf die Frage des Nutzers.
+- Jeder Fachbegriff wird sofort in Alltagssprache übersetzt (z.B. "Saturn -- das, was Struktur und Verbindlichkeit verlangt").
+- Halte das Überschriftenformat exakt ein (Planet wie übermittelt, Aspekttyp als "Konjunktion", "Opposition", "Trigon", "Quadrat" oder "Sextil") -- die Überschrift wird automatisch mit den berechneten Chart-Daten verknüpft.
 
 **Reflexionsfragen** -- Exakt drei präzise, herausfordernde Fragen.
 

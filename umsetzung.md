@@ -1002,6 +1002,8 @@ Nach jeder abgeschlossenen Stufe muessen mindestens diese Bereiche geprueft werd
 | 2026-05-07 | 3 | Client/Server-Split: Astrologie + KI ueber API Routes | swisseph-wasm (WASM) kann nicht ins Client-Bundle |
 | 2026-05-08 | 5 | Geburtsdaten-Effekt verbessert: Erklärung + Radix-Signatur | Nutzerführung optimiert, Mehrwert verdeutlicht, Chart-Summary über Ziehung |
 | 2026-05-08 | 4 | KI-Prompt Version 1.1: Analytische Synthese | Bedeutung pro Karte isoliert, dann Synthese mit Astrologie, kein AI-Slob |
+| 2026-09-10 | 5 | Symbol-Plaketten für "Synthese aus Astrologie und Tarot": jede >>-Passage wird zur Plakette mit Glyph, exakter Chart-Datenzeile (Grad/Haus/Orb) und Teaser; volle Passage hinter "Vertiefen" (astroPlaque.ts, astroGlyphs.ts, AstroPlaque.tsx, KineticBlueprint-Branch) | Der Abschnitt wurde als Textwand übersprungen; Tarot bekommt Objekte, Astrologie bisher nur Text. Exakte Swiss-Ephemeris-Daten werden jetzt sichtbar gerendert. Variante A (Radix-SVG-Kreis) als Stufe 2 geplant, Plaketten tragen dafür data-astro-symbols |
+| 2026-09-10 | 4 | KI-Prompt Version 1.4: Synthese-Regeln geschärft | Eine Erkenntnis pro Symbol in 2–4 Sätzen, stärkster Satz zuerst (wird Teaser), Bezug zur Nutzerfrage, Alltagsübersetzung, exaktes >>-Format für zuverlässiges Chart-Matching — Qualität des Abschnitts war als TODO markiert |
 
 ---
 

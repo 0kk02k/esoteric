@@ -6,6 +6,7 @@ import { getSessionToken } from "@/lib/session";
 import { Panel } from "@/components/Panel";
 import { Button } from "@/components/Button";
 import ReadingPanel from "@/components/ReadingPanel";
+import { KineticBlueprint } from "@/components/KineticBlueprint";
 import TarotCard from "@/components/TarotCard";
 import { Constellation } from "@/components/Constellation";
 import { CrystalSpinner } from "@/components/CrystalSpinner";
@@ -166,7 +167,9 @@ export default function ReadingDetailPage({ params }: { params: Promise<{ id: st
               <section>
                  {reading.readingText ? (
                     <ReadingPanel model={reading.model || "KI"}>
-                       {reading.readingText}
+                       {/* Gleicher Renderer wie im Flow; ohne gespeicherte Chart-Daten
+                           degradieren die Plaketten graceful (keine Datenzeile). */}
+                       <KineticBlueprint text={reading.readingText} />
                     </ReadingPanel>
                  ) : (
                     /* Kein Deutungstext ist ein eigener Zustand — kein leeres KI-Panel */

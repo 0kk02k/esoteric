@@ -2,7 +2,14 @@
 
 import { motion } from "framer-motion";
 import { ReactNode } from "react";
+import type { ChartResponse } from "@/lib/astrology";
+import {
+  parseSynthesisBlocks,
+  preparePlaque,
+  type SynthesisBlock,
+} from "@/lib/astroPlaque";
 import { cn } from "@/lib/utils";
+import AstroPlaque from "./AstroPlaque";
 import TarotCard from "./TarotCard";
 import SymbolChip from "./SymbolChip";
 
@@ -18,6 +25,7 @@ interface DrawnCard {
 interface KineticTextProps {
   text: string;
   cards?: DrawnCard[];
+  chart?: ChartResponse | null;
   className?: string;
 }
 
@@ -37,7 +45,7 @@ export function renderInline(text: string): ReactNode[] {
   );
 }
 
-export const KineticBlueprint = ({ text, cards, className }: KineticTextProps) => {
+export const KineticBlueprint = ({ text, cards, chart, className }: KineticTextProps) => {
   const sections = text.includes("**")
     ? text.split(/\n(?=\*\*)/)
     : text.split(/\n\n+/);
@@ -45,16 +53,51 @@ export const KineticBlueprint = ({ text, cards, className }: KineticTextProps) =
   return (
     <div className={cn("space-y-16 py-4", className)}>
       {sections.map((section, index) => (
-        <BlueprintSection key={index} content={section} index={index} cards={cards} />
+        <BlueprintSection key={index} content={section} index={index} cards={cards} chart={chart} />
       ))}
     </div>
   );
 };
 
-const BlueprintSection = ({ content, cards }: { content: string; index: number; cards?: DrawnCard[] }) => {
+const BlueprintSection = ({ content, cards, chart }: { content: string; index: number; cards?: DrawnCard[]; chart?: ChartResponse | null }) => {
   const match = content.match(/^\s*\*\*([\s\S]*?)\*\*\s*:?\s*([\s\S]*)/);
   const title = match ? match[1] : null;
   const body = match ? match[2] : content;
+
+  const isSynthesis = Boolean(title && /synthese/i.test(title) && /astrolog/i.test(title));
+  const synthesis = isSynthesis ? parseSynthesisBlocks(body) : null;
+
+  if (isSynthesis && synthesis && synthesis.blocks.length > 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -16 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true, margin: "0px 0px -80px 0px" }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        className="relative group"
+      >
+        <Sidebar variant="violet" />
+
+        <div className="pl-8 space-y-6">
+          {title && <SectionHeader title={title} showLine={true} variant="violet" />}
+
+          {synthesis.intro.map((paragraph, i) => (
+            <p key={i} className="text-text-secondary text-xl leading-[1.85] font-serif">
+              {renderInline(paragraph)}
+            </p>
+          ))}
+
+          <div className="space-y-6 pt-2">
+            {synthesis.blocks.map((block, i) => (
+              <SynthesisPlaque key={i} block={block} index={i} chart={chart} />
+            ))}
+          </div>
+
+          <BottomLine variant="violet" />
+        </div>
+      </motion.div>
+    );
+  }
 
   if (title === "Die Karten" && cards) {
     const cardSegments = body.split(/\n(?=###)/);
@@ -158,6 +201,26 @@ const BlueprintSection = ({ content, cards }: { content: string; index: number; 
         </div>
       </div>
     </motion.div>
+  );
+};
+
+const SynthesisPlaque = ({ block, index, chart }: { block: SynthesisBlock; index: number; chart?: ChartResponse | null }) => {
+  const plaque = preparePlaque(block, chart);
+
+  return (
+    <AstroPlaque
+      glyph={plaque.glyph}
+      title={plaque.title}
+      dataLine={plaque.dataLine}
+      teaser={renderInline(plaque.teaser)}
+      index={index}
+      accent={plaque.accent}
+      symbols={plaque.symbols}
+    >
+      {plaque.rest.map((paragraph, i) => (
+        <p key={i}>{renderInline(paragraph)}</p>
+      ))}
+    </AstroPlaque>
   );
 };
 

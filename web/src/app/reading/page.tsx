@@ -1322,7 +1322,7 @@ export default function ReadingPage() {
                           </section>
 
                           {state.result ? (
-                            <KineticBlueprint text={state.result.text} cards={state.cards} />
+                            <KineticBlueprint text={state.result.text} cards={state.cards} chart={state.chart} />
                           ) : (
                             <Panel className="border-danger-muted/30 py-12 text-center">
                                <p className="text-danger-muted font-serif text-lg mb-6">
