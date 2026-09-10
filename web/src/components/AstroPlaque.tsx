@@ -20,6 +20,8 @@ interface AstroPlaqueProps {
   index?: number;
   /** Beteiligte Symbolnamen (Stufe 2: Highlight-Verknüpfung mit dem Radix-Kreis). */
   symbols?: string[];
+  /** Meldet das Auf-/Zuklappen — die Synthese-Sektion entzündet dann die Symbole im Radix. */
+  onOpenChange?: (open: boolean) => void;
   /** Gold = Planetenposition, violett = Aspekt (KI-Farbsemantik). */
   accent?: "gold" | "violet";
 }
@@ -37,6 +39,7 @@ const AstroPlaque = ({
   children,
   index = 0,
   symbols,
+  onOpenChange,
   accent = "gold",
 }: AstroPlaqueProps) => {
   const [open, setOpen] = useState(false);
@@ -90,7 +93,11 @@ const AstroPlaque = ({
       <button
         id={buttonId}
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => {
+          const next = !open;
+          setOpen(next);
+          onOpenChange?.(next);
+        }}
         aria-expanded={open}
         aria-controls={panelId}
         className={cn(

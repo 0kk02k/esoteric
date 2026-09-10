@@ -144,6 +144,7 @@ Strukturiere deine Antwort zwingend in exakt diese Abschnitte:
 - Der erste Satz ist der stärkste und muss in sich verständlich sein; er wird als Vorschau angezeigt.
 - Jede Passage bezieht sich ausdrücklich auf die Frage des Nutzers.
 - Jeder Fachbegriff wird sofort in Alltagssprache übersetzt (z.B. "Saturn -- das, was Struktur und Verbindlichkeit verlangt").
+- Übernimm Grad-, Haus- und Orb-Zahlen ausschließlich exakt aus den übermittelten Daten -- rechne sie nicht um und erfinde nichts; daneben zeigt die Oberfläche die berechneten Werte an, Widersprüche fallen auf.
 - Halte das Überschriftenformat exakt ein (Planet wie übermittelt, Aspekttyp als "Konjunktion", "Opposition", "Trigon", "Quadrat" oder "Sextil") -- die Überschrift wird automatisch mit den berechneten Chart-Daten verknüpft.
 
 **Reflexionsfragen** -- Exakt drei präzise, herausfordernde Fragen.

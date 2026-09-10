@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import type { ChartResponse } from "@/lib/astrology";
 import {
   parseSynthesisBlocks,
@@ -10,6 +10,7 @@ import {
 } from "@/lib/astroPlaque";
 import { cn } from "@/lib/utils";
 import AstroPlaque from "./AstroPlaque";
+import RadixWheel from "./RadixWheel";
 import TarotCard from "./TarotCard";
 import SymbolChip from "./SymbolChip";
 
@@ -69,33 +70,7 @@ const BlueprintSection = ({ content, cards, chart }: { content: string; index: n
 
   if (isSynthesis && synthesis && synthesis.blocks.length > 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, x: -16 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true, margin: "0px 0px -80px 0px" }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="relative group"
-      >
-        <Sidebar variant="violet" />
-
-        <div className="pl-8 space-y-6">
-          {title && <SectionHeader title={title} showLine={true} variant="violet" />}
-
-          {synthesis.intro.map((paragraph, i) => (
-            <p key={i} className="text-text-secondary text-xl leading-[1.85] font-serif">
-              {renderInline(paragraph)}
-            </p>
-          ))}
-
-          <div className="space-y-6 pt-2">
-            {synthesis.blocks.map((block, i) => (
-              <SynthesisPlaque key={i} block={block} index={i} chart={chart} />
-            ))}
-          </div>
-
-          <BottomLine variant="violet" />
-        </div>
-      </motion.div>
+      <SynthesisSection title={title} synthesis={synthesis} chart={chart} />
     );
   }
 
@@ -204,7 +179,7 @@ const BlueprintSection = ({ content, cards, chart }: { content: string; index: n
   );
 };
 
-const SynthesisPlaque = ({ block, index, chart }: { block: SynthesisBlock; index: number; chart?: ChartResponse | null }) => {
+const SynthesisPlaque = ({ block, index, chart, onOpenChange }: { block: SynthesisBlock; index: number; chart?: ChartResponse | null; onOpenChange?: (open: boolean) => void }) => {
   const plaque = preparePlaque(block, chart);
 
   return (
@@ -216,11 +191,66 @@ const SynthesisPlaque = ({ block, index, chart }: { block: SynthesisBlock; index
       index={index}
       accent={plaque.accent}
       symbols={plaque.symbols}
+      onOpenChange={onOpenChange}
     >
       {plaque.rest.map((paragraph, i) => (
         <p key={i}>{renderInline(paragraph)}</p>
       ))}
     </AstroPlaque>
+  );
+};
+
+/**
+ * Die Synthese-Sektion: Radix-Kreis über den Plaketten. Keine Plakette offen →
+ * alle genannten Symbole leuchten; wird eine geöffnet, zieht sich das Licht auf
+ * ihre Symbole zusammen (data-astro-symbols für spätere Verfeinerung).
+ */
+const SynthesisSection = ({ title, synthesis, chart }: { title: string | null; synthesis: NonNullable<ReturnType<typeof parseSynthesisBlocks>>; chart?: ChartResponse | null }) => {
+  const [openSymbols, setOpenSymbols] = useState<string[] | null>(null);
+
+  const namedSymbols = Array.from(
+    new Set(synthesis.blocks.flatMap((block) => preparePlaque(block, chart).symbols)),
+  );
+  const activeSymbols = openSymbols ?? namedSymbols;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -16 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, margin: "0px 0px -80px 0px" }}
+      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      className="relative group"
+    >
+      <Sidebar variant="violet" />
+
+      <div className="pl-8 space-y-6">
+        {title && <SectionHeader title={title} showLine={true} variant="violet" />}
+
+        {synthesis.intro.map((paragraph, i) => (
+          <p key={i} className="text-text-secondary text-xl leading-[1.85] font-serif">
+            {renderInline(paragraph)}
+          </p>
+        ))}
+
+        {chart && chart.planets.length > 0 && (
+          <RadixWheel chart={chart} activeSymbols={activeSymbols} />
+        )}
+
+        <div className="space-y-6 pt-2">
+          {synthesis.blocks.map((block, i) => (
+            <SynthesisPlaque
+              key={i}
+              block={block}
+              index={i}
+              chart={chart}
+              onOpenChange={(open) => setOpenSymbols(open ? preparePlaque(block, chart).symbols : null)}
+            />
+          ))}
+        </div>
+
+        <BottomLine variant="violet" />
+      </div>
+    </motion.div>
   );
 };
 
