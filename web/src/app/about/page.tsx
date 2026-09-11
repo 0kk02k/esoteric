@@ -43,7 +43,7 @@ export default function AboutPage() {
                 ESO ist kein Orakel, das die Zukunft vorhersagt. Es ist ein kybernetischer Spiegel, entworfen für die tiefgreifende Selbstreflexion im 21. Jahrhundert. 
               </p>
               <p>
-                In einer Welt der Informationsüberflutung bietet ESO einen Raum der Stille und der symbolischen Ordnung. Wir kombinieren jahrtausendealte Weisheitssysteme mit modernster Himmelsmechanik und künstlicher Intelligenz, um Muster erkennbar zu machen, die im Alltag oft verborgen bleiben.
+                In einer Welt der Informationsüberflutung bietet ESO einen Raum der Stille und der symbolischen Ordnung. Wir kombinieren jahrtausendealte Weisheitssysteme mit moderner Himmelsmechanik und künstlicher Intelligenz, um Muster erkennbar zu machen, die im Alltag oft verborgen bleiben.
               </p>
             </div>
           </section>
@@ -60,7 +60,7 @@ export default function AboutPage() {
                 <Orbit className="w-8 h-8 text-gold mb-6" />
                 <h3 className="font-display text-xl text-text mb-4">Präzise Astronomie</h3>
                 <p className="text-sm text-text-secondary leading-relaxed">
-                  Jedes Reading basiert auf exakten Berechnungen der Himmelskörper zum Zeitpunkt Ihrer Geburt. Wir nutzen die <strong>Swiss Ephemeris</strong>, den Goldstandard der astronomischen Datenverarbeitung, um Ihre Radix-Signatur deterministisch zu bestimmen.
+                  Jedes Reading basiert auf exakten Berechnungen der Himmelskörper zum Zeitpunkt deiner Geburt. Wir nutzen die <strong>Swiss Ephemeris</strong>, den Goldstandard der astronomischen Datenverarbeitung, um deine Radix-Signatur deterministisch zu bestimmen.
                 </p>
               </Panel>
 
@@ -68,7 +68,7 @@ export default function AboutPage() {
                 <Sparkles className="w-8 h-8 text-violet mb-6" />
                 <h3 className="font-display text-xl text-text mb-4">Tarot-Korrespondenz</h3>
                 <p className="text-sm text-text-secondary leading-relaxed">
-                  Wir folgen dem System des <strong>Golden Dawn</strong> und der Rider-Waite-Symbolik. Die Karten werden nicht zufällig gedeutet, sondern über ein strenges Geflecht aus elementaren und astrologischen Zuordnungen mit Ihrem Chart verbunden.
+                  Wir folgen dem System des <strong>Golden Dawn</strong> und der Rider-Waite-Symbolik. Die Karten werden nicht zufällig gedeutet, sondern über ein strenges Geflecht aus elementaren und astrologischen Zuordnungen mit deinem Chart verbunden.
                 </p>
               </Panel>
 
@@ -76,7 +76,7 @@ export default function AboutPage() {
                 <Binary className="w-8 h-8 text-gold mb-6" />
                 <h3 className="font-display text-xl text-text mb-4">Narrative Synthese</h3>
                 <p className="text-sm text-text-secondary leading-relaxed">
-                  Die KI fungiert als Lyriker und Übersetzer. Sie erfindet keine Fakten, sondern webt aus den astronomischen Daten und der gezogenen Symbolik eine narrative Deutung, die speziell auf Ihre individuelle Fragestellung zugeschnitten ist.
+                  Die KI fungiert als Lyriker und Übersetzer. Sie erfindet keine Fakten, sondern webt aus den astronomischen Daten und der gezogenen Symbolik eine narrative Deutung, die speziell auf deine individuelle Fragestellung zugeschnitten ist.
                 </p>
               </Panel>
             </div>
@@ -96,7 +96,7 @@ export default function AboutPage() {
                 <div className="space-y-4">
                   <h4 className="font-mono text-[10px] text-violet uppercase tracking-widest">Nicht-Deterministisch</h4>
                   <p>
-                    Die KI wird niemals sagen: "Dies wird geschehen." Sie sagt stattdessen: "Diese Symbole deuten auf eine Energie hin, die Raum für X oder Y bietet." Die Deutungshoheit liegt immer bei Ihnen.
+                    Die KI wird niemals sagen: "Dies wird geschehen." Sie sagt stattdessen: "Diese Symbole deuten auf eine Energie hin, die Raum für X oder Y bietet." Die Deutungshoheit liegt immer bei dir.
                   </p>
                 </div>
                 <div className="space-y-4">
@@ -117,10 +117,10 @@ export default function AboutPage() {
             </div>
             <div className="space-y-6 text-text-secondary leading-relaxed max-w-2xl">
               <p>
-                Ein ESO-Reading verknüpft die archetypischen Energien Ihrer Geburt (Ihre "Werkzeuge") mit der aktuellen Symbolik der Karten (Ihre "Situation"). 
+                Ein ESO-Reading verknüpft die archetypischen Energien deiner Geburt (deine "Werkzeuge") mit der aktuellen Symbolik der Karten (deine "Situation").
               </p>
               <p>
-                Wenn beispielsweise die Karte <strong>"Der Turm"</strong> auf einen prominenten <strong>Mars-Transit</strong> in Ihrem Chart trifft, synthetisiert die KI diese doppelte Feuer-Energie nicht als Katastrophe, sondern als notwendigen Impuls für den Durchbruch festgefahrener Strukturen.
+                Wenn beispielsweise die Karte <strong>"Der Turm"</strong> auf einen prominenten <strong>Mars-Transit</strong> in deinem Chart trifft, synthetisiert die KI diese doppelte Feuer-Energie nicht als Katastrophe, sondern als notwendigen Impuls für den Durchbruch festgefahrener Strukturen.
               </p>
             </div>
           </section>
@@ -136,7 +136,7 @@ export default function AboutPage() {
                 Trotz technologischer Präzision bleibt ESO ein Werkzeug für Unterhaltung und philosophische Reflexion. Wir geben ausdrücklich keine medizinischen, rechtlichen oder finanziellen Ratschläge. 
               </p>
               <p>
-                Sollten Sie sich in einer akuten Krise befinden, ist dieses System nicht der richtige Ort für Hilfe. Bitte wenden Sie sich an professionelle menschliche Unterstützungsdienste.
+                Solltest du dich in einer akuten Krise befinden, ist dieses System nicht der richtige Ort für Hilfe. Bitte wende dich an professionelle menschliche Unterstützungsdienste.
               </p>
             </div>
           </section>

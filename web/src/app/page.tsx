@@ -15,7 +15,7 @@ const FEATURES = [
   },
   {
     title: "Symbolisches Tarot",
-    description: "Keine generischen Texte. Jede Karte wird im Kontext deines Geburtscharts und deiner spezifischen Frage analysiert.",
+    description: "Jede Karte wird im Kontext deines Geburtscharts und deiner Frage gelesen — nie als schwebendes Generalwissen.",
     icon: Moon,
   },
   {
@@ -48,7 +48,7 @@ export default function LandingPage() {
                 Dein Spiegel aus Sternen, Symbolen und <span className="text-gold italic font-medium heading-glow">KI</span>
               </h1>
               <p className="text-lg sm:text-xl text-text-secondary max-w-xl mx-auto lg:mx-0 mb-10 leading-relaxed">
-                ESO ist ein digitales Grimoire für die moderne Zeit. Wir verbinden exakte Astronomie mit archetypischem Tarot zu einer einzigartigen Reflexions-Experience.
+                ESO ist ein digitales Grimoire für die moderne Zeit. Wir verbinden exakte Astronomie mit archetypischem Tarot zu einem Spiegelraum, den es so noch nicht gab.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                 <Link href="/reading">

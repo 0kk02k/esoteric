@@ -942,7 +942,7 @@ export default function ReadingPage() {
                           tabIndex={-1}
                           className="font-display text-4xl sm:text-5xl text-text heading-glow focus:outline-none"
                         >
-                          Das Energiefeld
+                          Das Sternenfeld
                         </h2>
                         {/* Die Anweisung lebt in StellarFields Live-Region — hier steht das Warum, nicht das Wie */}
                         <p className="text-lg text-text-secondary max-w-xl mx-auto leading-relaxed">
@@ -987,7 +987,7 @@ export default function ReadingPage() {
                          </h2>
                          <p className="text-xl text-text-secondary max-w-xl mx-auto leading-relaxed" aria-live="polite">
                            {state.cards.length === 0
-                             ? "Deine Resonanzpunkte werden zu Karten..."
+                             ? "Deine Sterne werden zu Karten..."
                              : allRevealed
                                ? "Deine Legung ist vollständig."
                                : "Deine Karten enthüllen sich — schau ihnen zu oder berühre sie für den schnellen Blick."}

@@ -45,7 +45,7 @@ const PLANS = [
     name: "Premium",
     price: "49€",
     period: " Einmalig",
-    description: "Ein umfassender, handgefertigter digitaler Report.",
+    description: "Ein umfassender digitaler Report, eigens für dich komponiert.",
     features: [
       "Alles aus Plus für 1 Monat",
       "Vollständige Radix-Analyse",
@@ -101,7 +101,7 @@ export default function PricingPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl sm:text-6xl font-display font-semibold text-text mb-6 heading-glow"
           >
-            Erweitere deinen Horizont
+            Weite deinen Horizont
           </motion.h1>
           <motion.p
             initial={{ opacity: 0 }}
@@ -199,7 +199,7 @@ export default function PricingPage() {
             </div>
           </div>
           <p className="mt-12 text-xs text-text-muted max-w-xl mx-auto leading-loose italic">
-            Zahlungen werden über Stripe abgewickelt. Simulation Mode: Der Button "Plus freischalten" simuliert eine erfolgreiche Zahlung für Testzwecke (erfordert Login).
+            Zahlungen werden über Stripe abgewickelt. Derzeit im Testbetrieb: „Plus freischalten“ schaltet Plus sofort und ohne Zahlung frei.
           </p>
         </div>
       </div>

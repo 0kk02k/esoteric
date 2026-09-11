@@ -102,7 +102,7 @@ export default function ReadingsPage() {
 
         {loading && (
           <div className="py-20">
-            <CrystalSpinner label="Initialisiere Archiv..." />
+            <CrystalSpinner label="Das Archiv öffnet sich..." />
           </div>
         )}
 
@@ -234,7 +234,7 @@ export default function ReadingsPage() {
                           exit={{ opacity: 0, height: 0 }}
                           className="mt-4 pt-6 border-t border-gold/10"
                         >
-                          <div className="text-xl text-text-secondary leading-[1.7] whitespace-pre-wrap font-serif italic border-l-2 border-gold/20 pl-6 py-2">
+                          <div className="text-xl text-text-secondary leading-[1.7] whitespace-pre-wrap font-serif border-l-2 border-gold/20 pl-6 py-2">
                             {reading.readingText}
                           </div>
                           
